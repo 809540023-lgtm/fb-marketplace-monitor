@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FB Marketplace 商品監控系統</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📊</text></svg>">
+<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.2/font/bootstrap-icons.css" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0e17;--card:#111827;--card2:#1a2332;--border:#1e293b;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--purple:#8b5cf6;--text:#e2e8f0;--text2:#94a3b8;--text3:#64748b}
+body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;min-height:100vh}
+.header{background:linear-gradient(135deg,#111827,#1a2332);border-bottom:1px solid var(--border);padding:12px 24px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;backdrop-filter:blur(10px)}
+.header-left{display:flex;align-items:center;gap:12px}
+.logo{font-size:1.4rem;font-weight:800;background:linear-gradient(135deg,var(--blue),var(--purple));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.live-badge{display:flex;align-items:center;gap:6px;background:rgba(16,185,129,0.15);color:var(--green);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600}
+.live-dot{width:8px;height:8px;background:var(--green);border-radius:50%;animation:pulse 1.5s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.3}}
+.btn{padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:0.85rem;font-weight:600;display:flex;align-items:center;gap:6px;transition:all 0.2s}
+.btn-blue{background:var(--blue);color:#fff}.btn-blue:hover{background:#2563eb}
+.btn-ghost{background:transparent;color:var(--text2);border:1px solid var(--border)}.btn-ghost:hover{background:var(--card2)}
+.stats-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;padding:16px 24px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px;position:relative;overflow:hidden}
+.stat-card::after{content:'';position:absolute;top:0;left:0;right:0;height:3px}
+.stat-card.blue::after{background:var(--blue)}.stat-card.green::after{background:var(--green)}.stat-card.red::after{background:var(--red)}.stat-card.orange::after{background:var(--orange)}.stat-card.purple::after{background:var(--purple)}
+.stat-label{font-size:0.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px}
+.stat-value{font-size:1.8rem;font-weight:800}.stat-sub{font-size:0.75rem;color:var(--text2);margin-top:4px}
+.filter-bar{padding:0 24px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filter-chip{padding:6px 14px;border-radius:20px;border:1px solid var(--border);background:transparent;color:var(--text2);font-size:0.8rem;cursor:pointer;transition:all 0.2s}
+.filter-chip:hover,.filter-chip.active{background:var(--blue);color:#fff;border-color:var(--blue)}
+.filter-chip.verdict-high{border-color:var(--red)}.filter-chip.verdict-high.active{background:var(--red)}
+.filter-chip.verdict-low{border-color:var(--green)}.filter-chip.verdict-low.active{background:var(--green)}
+.filter-chip.verdict-fair{border-color:var(--orange)}.filter-chip.verdict-fair.active{background:var(--orange)}
+.search-input{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--text);font-size:0.85rem;width:200px}
+.sort-bar{padding:0 24px 12px;display:flex;gap:8px;align-items:center}
+.sort-select{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:0.8rem}
+.result-count{font-size:0.8rem;color:var(--text3);margin-left:auto}
+.product-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:12px;padding:0 24px 24px}
+.product-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:all 0.2s}
+.product-card:hover{border-color:var(--blue);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.3)}
+.card-header{display:flex;gap:12px;padding:14px}
+.card-img{width:90px;height:90px;border-radius:8px;background:var(--card2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.card-info{flex:1;min-width:0}
+.card-title{font-size:0.9rem;font-weight:600;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.card-meta{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
+.meta-tag{font-size:0.7rem;padding:2px 8px;border-radius:10px;background:rgba(59,130,246,0.15);color:var(--blue)}
+.meta-location{font-size:0.7rem;color:var(--text3)}
+.price-compare{display:grid;grid-template-columns:1fr auto 1fr;gap:4px;padding:0 14px 10px;align-items:center}
+.price-col{text-align:center}.price-label{font-size:0.65rem;color:var(--text3)}.price-val{font-size:1.1rem;font-weight:700;margin-top:2px}
+.price-listed{color:var(--text)}.price-estimated{color:var(--blue)}.price-arrow{font-size:1.2rem;color:var(--text3)}
+.verdict-bar{padding:8px 14px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid var(--border)}
+.verdict-badge{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:700}
+.verdict-high{background:rgba(239,68,68,0.15);color:var(--red)}.verdict-slightly-high{background:rgba(245,158,11,0.15);color:var(--orange)}.verdict-fair{background:rgba(16,185,129,0.15);color:var(--green)}.verdict-slightly-low{background:rgba(59,130,246,0.15);color:var(--blue)}.verdict-low{background:rgba(139,92,246,0.15);color:var(--purple)}
+.diff-pct{font-size:0.85rem;font-weight:700}.diff-positive{color:var(--red)}.diff-negative{color:var(--green)}.diff-neutral{color:var(--text3)}
+.condition-bar{height:4px;border-radius:2px;background:var(--border);margin:6px 14px 0;overflow:hidden}
+.condition-fill{height:100%;border-radius:2px}
+.analysis-text{font-size:0.72rem;color:var(--text3);padding:6px 14px 10px;line-height:1.4}
+.card-actions{padding:0 14px 12px}.card-actions a{font-size:0.75rem;color:var(--blue);text-decoration:none;display:inline-flex;align-items:center;gap:4px;padding:4px 8px;border-radius:6px;background:rgba(59,130,246,0.1)}
+.charts-section{padding:0 24px 24px;display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:16px}
+.chart-title{font-size:0.85rem;font-weight:700;margin-bottom:12px;color:var(--text2)}
+.dist-bar{display:flex;height:28px;border-radius:6px;overflow:hidden}.dist-segment{display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:#fff}
+.dist-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}.legend-item{display:flex;align-items:center;gap:4px;font-size:0.72rem;color:var(--text2)}.legend-dot{width:8px;height:8px;border-radius:50%}
+.kw-bar-row{display:flex;align-items:center;gap:8px;margin-bottom:8px}.kw-label{width:70px;font-size:0.8rem;color:var(--text2);text-align:right;flex-shrink:0}.kw-bars{flex:1;display:flex;gap:2px;height:24px}.kw-bar{border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:0.65rem;font-weight:600;color:#fff;min-width:30px}
+.timestamp-bar{padding:8px 24px;text-align:center;font-size:0.72rem;color:var(--text3)}
+@media(max-width:768px){.stats-row{grid-template-columns:repeat(2,1fr);padding:12px}.product-grid{grid-template-columns:1fr;padding:0 12px 12px}.charts-section{grid-template-columns:1fr;padding:0 12px 12px}.header{padding:10px 12px;flex-wrap:wrap;gap:8px}.stat-value{font-size:1.4rem}.filter-bar,.sort-bar{padding:0 12px 12px}}
+</style></head><body>
+<div class="header"><div class="header-left"><div class="logo"><i class="bi bi-graph-up-arrow"></i> FB 商品監控系統</div><div class="live-badge"><span class="live-dot"></span>MONITORING</div></div><div style="display:flex;gap:8px"><button class="btn btn-ghost" onclick="location.reload()"><i class="bi bi-arrow-clockwise"></i> 刷新</button><button class="btn btn-blue" onclick="exportCSV()"><i class="bi bi-download"></i> 匯出CSV</button></div></div>
+<div class="stats-row"><div class="stat-card blue"><div class="stat-label">總監控商品</div><div class="stat-value" id="sT">--</div><div class="stat-sub">3 個關鍵詞</div></div><div class="stat-card green"><div class="stat-label">價格偏低</div><div class="stat-value" id="sU">--</div><div class="stat-sub">撿便宜</div></div><div class="stat-card red"><div class="stat-label">價格偏高</div><div class="stat-value" id="sO">--</div></div><div class="stat-card orange"><div class="stat-label">價格合理</div><div class="stat-value" id="sF">--</div></div><div class="stat-card purple"><div class="stat-label">平均差異</div><div class="stat-value" id="sD">--</div><div class="stat-sub" id="sDsub">-</div></div></div>
+<div class="charts-section"><div class="chart-card"><div class="chart-title"><i class="bi bi-pie-chart"></i> 價格判定分佈</div><div class="dist-bar" id="distBar"></div><div class="dist-legend" id="distLeg"></div></div><div class="chart-card"><div class="chart-title"><i class="bi bi-bar-chart"></i> 各類別平均價格</div><div id="kwBars"></div></div></div>
+<div class="filter-bar"><span style="color:var(--text3);font-size:0.8rem"><i class="bi bi-funnel"></i> 篩選:</span><button class="filter-chip active" data-kw="" onclick="setKW(this,'')">全部</button><button class="filter-chip" data-kw="水槽" onclick="setKW(this,'水槽')">水槽</button><button class="filter-chip" data-kw="臥櫃冰箱" onclick="setKW(this,'臥櫃冰箱')">臥櫃冰箱</button><button class="filter-chip" data-kw="製冰機" onclick="setKW(this,'製冰機')">製冰機</button><span style="color:var(--border);margin:0 4px">|</span><button class="filter-chip verdict-low" data-v="偏低" onclick="setV(this,'偏低')">偏低</button><button class="filter-chip verdict-fair" data-v="合理" onclick="setV(this,'合理')">合理</button><button class="filter-chip verdict-high" data-v="偏高" onclick="setV(this,'偏高')">偏高</button><input class="search-input" placeholder="搜尋..." id="searchBox" oninput="filter()"></div>
+<div class="sort-bar"><span style="color:var(--text3);font-size:0.8rem"><i class="bi bi-sort-down"></i></span><select class="sort-select" id="sortSel" onchange="filter()"><option value="da">差異% 低→高</option><option value="dd">差異% 高→低</option><option value="pa">標價 低→高</option><option value="pd">標價 高→低</option><option value="sd">分數 高→低</option></select><span class="result-count" id="rc"></span></div>
+<div class="product-grid" id="grid"></div>
+<div class="timestamp-bar" id="ts"></div>
+<script>
+const P=[
+{t:"全新 不鏽鋼水槽 洗手槽 水槽 洗手台 洗碗槽 洗衣槽",k:"水槽",l:"高雄市",lp:100,ep:1000,d:-90,v:"偏低",c:"近全新",s:9,u:"https://www.facebook.com/marketplace/item/1376220403919960/"},
+{t:"冷氣/咖啡機/餐用品/廚房配件",k:"水槽",l:"新北市",lp:100,ep:500,d:-80,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/650498714831462/"},
+{t:"餐廳結束營業",k:"臥櫃冰箱",l:"台北市",lp:500,ep:1800,d:-72.2,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1272710607897505/"},
+{t:"不要了！冰櫃家用小型冷藏冷凍臥式小型冷凍櫃",k:"臥櫃冰箱",l:"新竹市",lp:400,ep:1200,d:-66.7,v:"偏低",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/3994660470772291/"},
+{t:"禾聯製冰機",k:"製冰機",l:"新北市",lp:1300,ep:2800,d:-53.6,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1295295012172131/"},
+{t:"東元直立冰箱x1 臥櫃冰箱 x2 電視螢幕x2",k:"臥櫃冰箱",l:"台北市",lp:1111,ep:1800,d:-38.3,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/600668233103011/"},
+{t:"製冰機1000磅、熱開水爐30公升",k:"製冰機",l:"台中市",lp:2000,ep:2800,d:-28.6,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1623082048831927/"},
+{t:"KOHZII 康馳全自動製冰機 KIM1220SS",k:"製冰機",l:"高雄市",lp:2000,ep:2800,d:-28.6,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1306353627983957/"},
+{t:"夏日熱銷 製冰機 110V全自動快速製冰機",k:"製冰機",l:"新北市",lp:2000,ep:2800,d:-28.6,v:"偏低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1636697450936760/"},
+{t:"二手 便宜出清 商用廚房白鐵器具 工作枱",k:"臥櫃冰箱",l:"高雄市",lp:1500,ep:1800,d:-16.7,v:"略低",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/3260666810780198/"},
+{t:"急出 全新！不鏽鋼洗水槽 清倉 900",k:"水槽",l:"桃園市",lp:900,ep:1000,d:-10,v:"略低",c:"近全新",s:9,u:"https://www.facebook.com/marketplace/item/1686741462298653/"},
+{t:"中水槽",k:"水槽",l:"高雄市",lp:1150,ep:1200,d:-4.2,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1084948383661543/"},
+{t:"超厚方型水槽",k:"水槽",l:"雲林縣",lp:1380,ep:1400,d:-1.4,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/2137036227061602/"},
+{t:"大深水槽(25深)",k:"水槽",l:"高雄市",lp:1680,ep:1700,d:-1.2,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1336530591231700/"},
+{t:"白鐵水槽雙槽 便宜出 1880",k:"水槽",l:"台南市",lp:1880,ep:1900,d:-1.1,v:"合理",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/680757001289723/"},{t:"不銹鋼雙口水槽",k:"水槽",l:"高雄市",lp:5000,ep:5000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1463850175271265/"},
+{t:"白鐵厚水槽",k:"水槽",l:"台南市",lp:4500,ep:4500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/833047759115718/"},
+{t:"72公分水槽-20深",k:"水槽",l:"高雄市",lp:2200,ep:2200,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/34151866401127544/"},
+{t:"商業用不鏽鋼水槽工作台",k:"水槽",l:"高雄市",lp:3000,ep:3000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1325024496328064/"},
+{t:"不鏽鋼水槽",k:"水槽",l:"Wuhan, Taiwan",lp:800,ep:800,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1342526223935338/"},
+{t:"二手水槽",k:"水槽",l:"高雄市",lp:1000,ep:1000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/668498472705020/"},
+{t:"水槽 洗手台",k:"水槽",l:"台中市",lp:3500,ep:3500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1097842818801764/"},
+{t:"2個1000工作台/水槽",k:"水槽",l:"台南市",lp:1000,ep:1000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1191876792643655/"},
+{t:"72公分全水槽(25深)",k:"水槽",l:"高雄市",lp:2500,ep:2500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/9762227600539233/"},
+{t:"商用厚水槽-62公分全水槽(30深)",k:"水槽",l:"高雄市",lp:3000,ep:3000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1268765254704735/"},
+{t:"商用厚雙水槽-120公分(30深)",k:"水槽",l:"高雄市",lp:5600,ep:5600,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1853283752181099/"},
+{t:"100公分水槽-25深",k:"水槽",l:"高雄市",lp:2700,ep:2700,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/9538093686293736/"},
+{t:"90公分水槽-20深",k:"水槽",l:"高雄市",lp:2500,ep:2500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1308024853715764/"},
+{t:"180公分水槽-25深",k:"水槽",l:"高雄市",lp:4800,ep:4800,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1405024630629858/"},
+{t:"125公分水槽-20深",k:"水槽",l:"高雄市",lp:3000,ep:3000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1012025837455960/"},
+{t:"商用厚水槽-120公分(30深)",k:"水槽",l:"高雄市",lp:4500,ep:4500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1198155118759247/"},
+{t:"急出 白鐵水槽 含運900",k:"水槽",l:"台中市",lp:900,ep:900,d:0,v:"合理",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/996919529209221/"},{t:"小冷凍櫃",k:"臥櫃冰箱",l:"高雄市",lp:3000,ep:3000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1601492961290052/"},
+{t:"售4尺3玻璃冷凍櫃",k:"臥櫃冰箱",l:"台南市",lp:6500,ep:6500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/953131003810731/"},
+{t:"超便宜／極美二手／8-9成新／冷凍.冷藏櫃一批",k:"臥櫃冰箱",l:"台中市",lp:3800,ep:3800,d:0,v:"合理",c:"八成新",s:8,u:"https://www.facebook.com/marketplace/item/1508467564170711/"},
+{t:"TECO 東元 149公升上掀式臥式變頻冷凍櫃",k:"臥櫃冰箱",l:"高雄市",lp:3300,ep:3300,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1641965720130764/"},
+{t:"臥室冷凍冰箱",k:"臥櫃冰箱",l:"桃園市",lp:7000,ep:7000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1317603857085699/"},
+{t:"Haier海爾上掀冷凍櫃 HCF-203S",k:"臥櫃冰箱",l:"高雄市",lp:4500,ep:4500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1403363591448162/"},
+{t:"搬家～瑞興6呎冷凍臥櫃8000可議",k:"臥櫃冰箱",l:"台中市",lp:8000,ep:8000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1295576058803765/"},
+{t:"二手臥櫃105L冰箱",k:"臥櫃冰箱",l:"新北市",lp:2000,ep:2000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1376483520553803/"},
+{t:"6呎臥櫃冰箱（已整理）就9000",k:"臥櫃冰箱",l:"台中市",lp:9000,ep:9000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/682556887901927/"},
+{t:"六尺瑞興臥櫃冰箱",k:"臥櫃冰箱",l:"台北市",lp:8000,ep:8000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/679714328263044/"},
+{t:"極美二手／餐飲店面營業用冷凍櫃一批",k:"臥櫃冰箱",l:"台中市",lp:4000,ep:4000,d:0,v:"合理",c:"八成新",s:8,u:"https://www.facebook.com/marketplace/item/1021597816697789/"},
+{t:"冷凍櫃",k:"臥櫃冰箱",l:"新竹市",lp:3000,ep:3000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1259821585641756/"},
+{t:"出清/瑞興6尺對開式冷藏冰箱9000元",k:"臥櫃冰箱",l:"高雄市",lp:9000,ep:9000,d:0,v:"合理",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/1362289778586127/"},
+{t:"兩門全凍冰箱 油炸機 抽風靜電機便宜賣",k:"臥櫃冰箱",l:"台中市",lp:2000,ep:2000,d:0,v:"合理",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/1405024630629001/"},
+{t:"冷凍臥櫃、商用冷藏冰箱",k:"臥櫃冰箱",l:"雲林縣",lp:5000,ep:5000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/946785214555889/"},
+{t:"二手臥櫃冷凍冰箱(強化玻璃掀蓋)",k:"臥櫃冰箱",l:"屏東縣",lp:6000,ep:6000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1260206509319564/"},
+{t:"掀蓋式冷凍冰櫃",k:"臥櫃冰箱",l:"新北市",lp:4500,ep:4500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1206792651438629/"},{t:"製冰機出清",k:"製冰機",l:"台中市",lp:10000,ep:10000,d:0,v:"合理",c:"五成新",s:5,u:"https://www.facebook.com/marketplace/item/2281794702341652/"},
+{t:"安威爾製冰機",k:"製冰機",l:"高雄市",lp:12000,ep:12000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1452105736358882/"},
+{t:"星崎日本進口製冰機 原價七萬多只賣三萬八",k:"製冰機",l:"臺東市",lp:38000,ep:38000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1824710501410484/"},
+{t:"安威爾製冰機",k:"製冰機",l:"高雄市",lp:6000,ep:6000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1175148227875108/"},
+{t:"力頓製冰機 營業用",k:"製冰機",l:"高雄市",lp:10000,ep:10000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1260614769459558/"},
+{t:"製冰機 330磅 還沒用到半價售出",k:"製冰機",l:"桃園市",lp:25000,ep:25000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/612889718482949/"},
+{t:"近全新 企鵝 HOSHIZAKI 製冰機 月型冰 900磅",k:"製冰機",l:"高雄市",lp:9800,ep:9800,d:0,v:"合理",c:"近全新",s:9,u:"https://www.facebook.com/marketplace/item/1388254702724178/"},
+{t:"製冰機120磅電壓110",k:"製冰機",l:"新北市",lp:17000,ep:17000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/2067541213733768/"},
+{t:"月形製冰機760磅220V可幫運",k:"製冰機",l:"高雄市",lp:30000,ep:30000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/614723031654499/"},
+{t:"小型製冰機 220v",k:"製冰機",l:"高雄市",lp:4000,ep:4000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1272419991276397/"},
+{t:"企鵝牌 製冰機",k:"製冰機",l:"台南市",lp:45000,ep:45000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1396254748480403/"},
+{t:"2手電器",k:"製冰機",l:"高雄市",lp:3500,ep:3500,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1267445714916266/"},
+{t:"售5x5大角冰製冰機全新",k:"製冰機",l:"台中市",lp:40000,ep:40000,d:0,v:"合理",c:"近全新",s:9,u:"https://www.facebook.com/marketplace/item/1295860198994654/"},
+{t:"萬利多 水冷 製冰機（方塊冰）",k:"製冰機",l:"台南市",lp:23000,ep:23000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1308451690738063/"},
+{t:"美國 Koolaire 製冰機 450磅",k:"製冰機",l:"Chaochou",lp:40000,ep:40000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/682102884676893/"},
+{t:"900磅安威爾月形製冰機",k:"製冰機",l:"高雄市",lp:50000,ep:50000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1260206509319001/"},
+{t:"老日光 TB-35T 觸控式商用泡茶機",k:"製冰機",l:"高雄市",lp:28000,ep:28000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/979942047717139/"},
+{t:"力頓專業製冰機 Leader Ice LM980",k:"製冰機",l:"台北市",lp:9999,ep:10000,d:0,v:"合理",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1361523462638252/"},
+{t:"製冰機",k:"製冰機",l:"苗栗市",lp:65000,ep:56000,d:16.1,v:"略高",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1225003759112162/"},
+{t:"雪沙製冰機",k:"製冰機",l:"高雄市",lp:200000,ep:56000,d:257.1,v:"偏高",c:"六成新",s:6,u:"https://www.facebook.com/marketplace/item/1296576048675597/"}
+];
+const allProducts=P.map(p=>({title:p.t,keyword:p.k,location:p.l,listed_price:p.lp,estimated_price:p.ep,price_diff_pct:p.d,price_verdict:p.v,condition:p.c,condition_score:p.s,url:p.u,analysis:"規則推算"}));
+let curKW='',curV='';
+function init(){
+  const total=allProducts.length;
+  const under=allProducts.filter(p=>['偏低','略低'].includes(p.price_verdict)).length;
+  const over=allProducts.filter(p=>['偏高','略高'].includes(p.price_verdict)).length;
+  const fair=allProducts.filter(p=>p.price_verdict==='合理').length;
+  const avgL=Math.round(allProducts.reduce((a,p)=>a+p.listed_price,0)/total);
+  const avgE=Math.round(allProducts.reduce((a,p)=>a+p.estimated_price,0)/total);
+  const diffPct=avgE>0?((avgL-avgE)/avgE*100).toFixed(1):0;
+  document.getElementById('sT').textContent=total;
+  document.getElementById('sU').textContent=under;
+  document.getElementById('sO').textContent=over;
+  document.getElementById('sF').textContent=fair;
+  document.getElementById('sD').textContent=(diffPct>0?'+':'')+diffPct+'%';
+  document.getElementById('sDsub').textContent='NT$'+avgL.toLocaleString()+' vs NT$'+avgE.toLocaleString();
+  // Verdict dist
+  const vd={'偏低':0,'略低':0,'合理':0,'略高':0,'偏高':0};
+  allProducts.forEach(p=>{if(vd[p.price_verdict]!==undefined)vd[p.price_verdict]++});
+  const colors={'偏高':'#ef4444','略高':'#f59e0b','合理':'#10b981','略低':'#3b82f6','偏低':'#8b5cf6'};
+  const bar=document.getElementById('distBar'),leg=document.getElementById('distLeg');
+  bar.innerHTML='';leg.innerHTML='';
+  ['偏低','略低','合理','略高','偏高'].forEach(k=>{
+    if(!vd[k])return;
+    const pct=vd[k]/total*100;
+    bar.innerHTML+='<div class="dist-segment" style="width:'+pct+'%;background:'+(colors[k]||'#475569')+'">'+vd[k]+'</div>';
+    leg.innerHTML+='<div class="legend-item"><span class="legend-dot" style="background:'+(colors[k]||'#475569')+'"></span>'+k+' ('+vd[k]+')</div>';
+  });
+  // KW bars
+  const kwMap={};
+  allProducts.forEach(p=>{
+    if(!kwMap[p.keyword])kwMap[p.keyword]={n:0,tl:0,te:0};
+    kwMap[p.keyword].n++;kwMap[p.keyword].tl+=p.listed_price;kwMap[p.keyword].te+=p.estimated_price;
+  });
+  const kwDiv=document.getElementById('kwBars');kwDiv.innerHTML='';
+  const mx=Math.max(...Object.values(kwMap).map(v=>Math.max(v.tl/v.n,v.te/v.n)));
+  Object.entries(kwMap).forEach(([kw,d])=>{
+    const al=Math.round(d.tl/d.n),ae=Math.round(d.te/d.n);
+    kwDiv.innerHTML+='<div class="kw-bar-row"><div class="kw-label">'+kw+'</div><div class="kw-bars"><div class="kw-bar" style="width:'+(al/mx*100)+'%;background:var(--text3)">$'+al.toLocaleString()+'</div><div class="kw-bar" style="width:'+(ae/mx*100)+'%;background:var(--blue)">$'+ae.toLocaleString()+'</div></div></div>';
+  });
+  kwDiv.innerHTML+='<div class="dist-legend"><div class="legend-item"><span class="legend-dot" style="background:var(--text3)"></span>標價</div><div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span>估價</div></div>';
+  document.getElementById('ts').textContent='資料更新: 2026-03-17 | 共'+total+'件 | 水槽、臥櫃冰箱、製冰機';
+  filter();
+}
+function setKW(el,kw){curKW=curKW===kw?'':kw;document.querySelectorAll('.filter-chip[data-kw]').forEach(c=>c.classList.toggle('active',c.dataset.kw===curKW));if(!curKW)document.querySelector('.filter-chip[data-kw=""]').classList.add('active');filter()}
+function setV(el,v){curV=curV===v?'':v;document.querySelectorAll('.filter-chip[data-v]').forEach(c=>c.classList.toggle('active',c.dataset.v===curV));filter()}
+function filter(){
+  const q=(document.getElementById('searchBox').value||'').toLowerCase();
+  let f=allProducts;
+  if(curKW)f=f.filter(p=>p.keyword===curKW);
+  if(curV)f=f.filter(p=>p.price_verdict===curV);
+  if(q)f=f.filter(p=>p.title.toLowerCase().includes(q));
+  const s=document.getElementById('sortSel').value;
+  if(s==='da')f.sort((a,b)=>a.price_diff_pct-b.price_diff_pct);
+  else if(s==='dd')f.sort((a,b)=>b.price_diff_pct-a.price_diff_pct);
+  else if(s==='pa')f.sort((a,b)=>a.listed_price-b.listed_price);
+  else if(s==='pd')f.sort((a,b)=>b.listed_price-a.listed_price);
+  else if(s==='sd')f.sort((a,b)=>b.condition_score-a.condition_score);
+  document.getElementById('rc').textContent='顯示'+f.length+'/'+allProducts.length+'件';
+  renderGrid(f);
+}
+function vc(v){return{'偏高':'verdict-high','略高':'verdict-slightly-high','合理':'verdict-fair','略低':'verdict-slightly-low','偏低':'verdict-low'}[v]||''}
+function vi(v){return{'偏高':'bi-arrow-up-circle-fill','略高':'bi-arrow-up-circle','合理':'bi-check-circle-fill','略低':'bi-arrow-down-circle','偏低':'bi-arrow-down-circle-fill'}[v]||'bi-question-circle'}
+function cc(s){return s>=8?'var(--green)':s>=6?'var(--blue)':s>=4?'var(--orange)':'var(--red)'}
+function renderGrid(ps){
+  const g=document.getElementById('grid');
+  if(!ps.length){g.innerHTML='<p style="text-align:center;color:var(--text3);padding:40px;grid-column:1/-1">沒有符合條件的商品</p>';return}
+  g.innerHTML=ps.map(p=>{
+    const dc=p.price_diff_pct>5?'diff-positive':p.price_diff_pct<-5?'diff-negative':'diff-neutral';
+    const co=cc(p.condition_score);
+    return '<div class="product-card"><div class="card-header"><div class="card-img"><i class="bi bi-image" style="color:var(--text3);font-size:1.5rem"></i></div><div class="card-info"><div class="card-title">'+p.title+'</div><div class="card-meta"><span class="meta-tag">'+p.keyword+'</span><span class="meta-location"><i class="bi bi-geo-alt"></i> '+p.location+'</span></div><div style="margin-top:4px;font-size:0.72rem;color:'+co+';font-weight:600">'+p.condition+' ('+p.condition_score+'/10)</div></div></div><div class="condition-bar"><div class="condition-fill" style="width:'+(p.condition_score*10)+'%;background:'+co+'"></div></div><div class="price-compare"><div class="price-col"><div class="price-label">賣家標價</div><div class="price-val price-listed">NT$'+p.listed_price.toLocaleString()+'</div></div><div class="price-arrow"><i class="bi bi-arrow-right"></i></div><div class="price-col"><div class="price-label">AI估價</div><div class="price-val price-estimated">NT$'+p.estimated_price.toLocaleString()+'</div></div></div><div class="verdict-bar"><div class="verdict-badge '+vc(p.price_verdict)+'"><i class="bi '+vi(p.price_verdict)+'"></i> '+p.price_verdict+'</div><div class="diff-pct '+dc+'">'+(p.price_diff_pct>0?'+':'')+p.price_diff_pct+'%</div></div><div class="card-actions"><a href="'+p.url+'" target="_blank"><i class="bi bi-facebook"></i> 查看商品</a></div></div>';
+  }).join('');
+}
+function exportCSV(){
+  let csv='關鍵詞,商品名稱,標價,AI估價,差異%,判定,新舊,分數,地點,連結\n';
+  allProducts.forEach(p=>{csv+=p.keyword+',"'+p.title.replace(/"/g,'""')+'",'+p.listed_price+','+p.estimated_price+','+p.price_diff_pct+'%,'+p.price_verdict+','+p.condition+','+p.condition_score+','+p.location+','+p.url+'\n'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(new Blob(['\uFEFF'+csv],{type:'text/csv;charset=utf-8;'}));
+  a.download='marketplace_'+new Date().toISOString().slice(0,10)+'.csv';a.click();
+}
+init();
+<\/script></body></html>
