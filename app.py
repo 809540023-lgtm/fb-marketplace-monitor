@@ -7,12 +7,13 @@ import re
 from datetime import datetime
 from flask import Flask, render_template, jsonify, request, Response
 
-app = Flask(__name__)
+app = Flask(__name__, template_folder='.')
 
-DATA_FILE = os.path.join(os.path.dirname(__file__), 'data', 'products.json')
+DATA_FILE = os.path.join(os.path.dirname(__file__), 'products.json')
 
 
 def load_products():
+    """載入商品資料"""
     try:
         with open(DATA_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
@@ -21,10 +22,12 @@ def load_products():
 
 
 def compute_stats(products):
+    """計算統計資料"""
     total = len(products)
     underpriced = sum(1 for p in products if p.get('price_verdict') in ('偏低', '略低'))
     overpriced = sum(1 for p in products if p.get('price_verdict') in ('偏高', '略高'))
     fair = sum(1 for p in products if p.get('price_verdict') == '合理')
+
     avg_listed = sum(p.get('listed_price', 0) for p in products) / total if total else 0
     avg_estimated = sum(p.get('estimated_price', 0) for p in products) / total if total else 0
 
@@ -49,10 +52,14 @@ def compute_stats(products):
             by_verdict[v] += 1
 
     return {
-        'total': total, 'underpriced_count': underpriced,
-        'overpriced_count': overpriced, 'fair_count': fair,
-        'avg_listed': round(avg_listed), 'avg_estimated': round(avg_estimated),
-        'by_keyword': by_keyword, 'by_verdict': by_verdict,
+        'total': total,
+        'underpriced_count': underpriced,
+        'overpriced_count': overpriced,
+        'fair_count': fair,
+        'avg_listed': round(avg_listed),
+        'avg_estimated': round(avg_estimated),
+        'by_keyword': by_keyword,
+        'by_verdict': by_verdict,
         'timestamp': datetime.now().isoformat(timespec='seconds')
     }
 
@@ -71,12 +78,14 @@ def api_products():
     keyword = request.args.get('keyword', '')
     verdict = request.args.get('verdict', '')
     search = request.args.get('q', '').lower()
+
     if keyword:
         products = [p for p in products if p.get('keyword') == keyword]
     if verdict:
         products = [p for p in products if p.get('price_verdict') == verdict]
     if search:
         products = [p for p in products if search in p.get('title', '').lower()]
+
     sort_by = request.args.get('sort', 'diff_asc')
     if sort_by == 'diff_asc':
         products.sort(key=lambda p: p.get('price_diff_pct', 0))
@@ -88,6 +97,7 @@ def api_products():
         products.sort(key=lambda p: p.get('listed_price', 0), reverse=True)
     elif sort_by == 'score_desc':
         products.sort(key=lambda p: p.get('condition_score', 0), reverse=True)
+
     return jsonify({'products': products, 'total': len(products)})
 
 
@@ -106,8 +116,11 @@ def api_export():
         title = p.get('title', '').replace('"', '""')
         rows.append(f"{p.get('keyword','')},\"{title}\",{p.get('listed_price',0)},{p.get('estimated_price',0)},{p.get('price_diff_pct',0)}%,{p.get('price_verdict','')},{p.get('condition','')},{p.get('condition_score',0)},{p.get('location','')},{p.get('url','')}")
     csv_content = '\ufeff' + header + '\n'.join(rows)
-    return Response(csv_content, mimetype='text/csv; charset=utf-8',
-        headers={'Content-Disposition': f'attachment; filename=marketplace_{datetime.now().strftime("%Y%m%d")}.csv'})
+    return Response(
+        csv_content,
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': f'attachment; filename=marketplace_{datetime.now().strftime("%Y%m%d")}.csv'}
+    )
 
 
 if __name__ == '__main__':
