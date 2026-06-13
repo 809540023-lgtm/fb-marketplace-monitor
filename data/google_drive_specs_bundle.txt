@@ -1,0 +1,3763 @@
+AI 日語補習班營運平台 - 規格文件包
+====================
+
+FILE: docs/japanese-school-platform/README.md
+---------------------------------------------
+# AI 日語補習班營運平台
+
+這份文件組把「AI 化日語補習班營運平台」拆成可執行的產品規格，目標不是做單一招生網站，而是做一個可支援招生、教務、行政、員工、招聘、財務與 AI 自動化的完整平台。
+
+## 文件清單
+
+- `01-sitemap-and-ia.md`
+  前台、學員端、員工端、管理端的 sitemap 與資訊架構。
+- `02-modules-and-roles.md`
+  核心模組、角色權限、主要流程與模組邊界。
+- `03-data-model.md`
+  核心資料表、關聯關係、欄位建議與實作注意事項。
+- `04-roadmap-and-prd.md`
+  MVP 範圍、分階段開發順序、驗收重點與 PRD 摘要。
+- `05-mvp-backlog.md`
+  可直接分派給設計、前端、後端與 PM 的 MVP backlog。
+- `06-frontend-workstream.md`
+  前端路由、頁面責任、共用元件、資料需求與 3 個 Sprint 的前端交付順序。
+- `07-backend-workstream.md`
+  後端模組邊界、auth/RBAC、queue jobs、webhook 流與 runtime 策略。
+- `08-delivery-plan.md`
+  團隊分工、sprint cadence、依賴順序、風險控管與交付節奏。
+- `../sql/japanese_school_platform_mvp.sql`
+  PostgreSQL MVP schema 草案，可直接作為 migration 起點。
+
+## 產品定位
+
+平台定位為面向「準備赴日生活的華人」的 AI 日語教育與校務管理平台，核心目標：
+
+1. 前台自動招生
+2. 後台自動管理
+3. AI 協助營運與教學
+
+## 建議技術方向
+
+- 前端：Next.js + React + Tailwind CSS
+- 後端：NestJS 或 FastAPI
+- 資料庫：PostgreSQL
+- 快取 / 任務：Redis + Queue Worker
+- 儲存：S3 或 R2
+- 驗證：JWT / Session + Email OTP + 第三方登入
+- 報表：內建 dashboard + Metabase / Superset
+
+## 建議先做的事
+
+1. 先確認 MVP 只做「招生 CRM + 課程班級管理 + 報名付款 + 基礎通知」。
+2. 用 `03-data-model.md` 先建立第一版 schema。
+3. 用 `04-roadmap-and-prd.md` 決定 Sprint 切法。
+4. 再開始切前端頁面與 API。
+
+
+FILE: docs/japanese-school-platform/01-sitemap-and-ia.md
+--------------------------------------------------------
+# Sitemap 與資訊架構
+
+## 1. 平台站點分區
+
+整體產品建議拆成四個入口：
+
+1. 前台官網
+2. 學員中心
+3. 員工工作台
+4. 管理後台
+
+---
+
+## 2. 前台官網 Sitemap
+
+### 首頁
+
+- 品牌主視覺
+- 核心價值主張
+- AI 課程推薦入口
+- 熱門課程
+- 報名流程
+- 學員見證
+- FAQ
+- 聯絡方式
+- CTA：立即諮詢 / 預約試聽 / 立即報名
+
+### 關於我們
+
+- 品牌故事
+- 教學理念
+- 適合族群
+- 教學團隊
+
+### 課程總覽
+
+- 日本生活日語
+- 零基礎發音班
+- 日本工作面試日語
+- 日本生活生存會話
+- JLPT N5 / N4 / N3
+- 一對一會話課
+- 線上直播班
+- 實體小班課
+
+### 課程詳細頁
+
+- 課程介紹
+- 適合對象
+- 課綱
+- 師資介紹
+- 上課方式
+- 費用方案
+- 開課資訊
+- FAQ
+- CTA：預約試聽 / 立即報名
+
+### 試聽預約
+
+- 試聽說明
+- 時段選擇
+- 基本資料
+- 程度與目標
+- LINE 綁定
+- 成功頁
+
+### 報名頁
+
+- 個人資料
+- 程度檢測
+- 課程與班級選擇
+- 優惠 / 推薦碼
+- 付款流程
+- 報名成功頁
+
+### FAQ
+
+- 課程選擇
+- 程度分級
+- 付款問題
+- 缺課補課
+- 線上 / 實體差異
+- 赴日前建議學習路線
+
+### 學員見證
+
+- 留學準備
+- 工作面試
+- 生活適應
+- JLPT 通過案例
+
+### 內容行銷
+
+- 部落格
+- 日本生活指南
+- 日本求職指南
+- 日語學習文章
+
+### 聯絡我們
+
+- 聯絡表單
+- LINE
+- WhatsApp
+- Email
+- 電話
+- 校區資訊
+
+### 招聘頁
+
+- 職缺列表
+- 工作內容
+- 薪資制度
+- 團隊文化
+- 應徵表單
+
+---
+
+## 3. 學員中心 Sitemap
+
+### 會員中心首頁
+
+- 個人學習總覽
+- 最近課程
+- 待繳事項
+- 最新通知
+
+### 我的課程
+
+- 已報名課程
+- 班級資訊
+- 上課連結 / 教室資訊
+- 課綱與教材
+
+### 我的作業
+
+- 待完成作業
+- 已提交作業
+- 教師回饋
+
+### 我的測驗
+
+- 程度測驗
+- 單元測驗
+- 成績與分析
+
+### 我的付款
+
+- 訂單紀錄
+- 發票資訊
+- 付款狀態
+
+### 我的通知
+
+- 報名通知
+- 開課提醒
+- 作業提醒
+- 繳費提醒
+
+### AI 練習區
+
+- 情境會話
+- 單字測驗
+- 課後摘要
+- 弱點分析
+- 學習提醒
+
+---
+
+## 4. 員工工作台 Sitemap
+
+### 工作儀表板
+
+- 今日待辦
+- 本週 KPI
+- 最新名單
+- 待處理提醒
+
+### 我的名單
+
+- 名單列表
+- 跟進紀錄
+- 試聽安排
+- 成交預測
+
+### 我的任務
+
+- 指派任務
+- 逾期任務
+- 協作留言
+
+### 我的班級
+
+- 課表
+- 教學紀錄
+- 出缺勤
+- 作業 / 測驗管理
+
+### 我的績效
+
+- 名單跟進數
+- 試聽數
+- 成交數
+- 課程評分
+
+---
+
+## 5. 管理後台 Sitemap
+
+### 儀表板
+
+- 今日新名單
+- 本週報名數
+- 試聽轉換率
+- 營收概覽
+- 缺課率
+- AI 營運摘要
+
+### 名單管理
+
+- 名單列表
+- 名單分派
+- 名單來源分析
+- 跟進紀錄
+- 流失原因
+
+### 招生進度
+
+- 漏斗看板
+- 試聽追蹤
+- 顧問績效
+
+### 學員管理
+
+- 學員檔案
+- 分班紀錄
+- 學習進度
+- 續報狀態
+
+### 課程管理
+
+- 課程設定
+- 課綱與章節
+- 課程公開狀態
+
+### 班級管理
+
+- 班級列表
+- 名額控管
+- 師資配置
+- 課堂資源
+
+### 排課管理
+
+- 教室資源
+- 教師時段
+- 衝堂檢查
+- 補課安排
+
+### 教師管理
+
+- 教師檔案
+- 可授課時段
+- 評價與績效
+
+### 員工管理
+
+- 帳號權限
+- 出勤
+- KPI
+- 排班
+
+### 招聘管理
+
+- 職缺
+- 履歷
+- 面試
+- 錄取流程
+
+### 財務 / 付款
+
+- 訂單
+- 付款
+- 發票
+- 退款
+
+### 訊息中心
+
+- Email
+- LINE
+- 站內通知
+- 範本管理
+
+### AI 助理中心
+
+- 招生助理
+- 教務助理
+- 學習助理
+- 行政助理
+- 招聘助理
+- AI 操作紀錄
+
+### 報表分析
+
+- 招生報表
+- 教務報表
+- 財務報表
+- 員工 KPI
+- 課程滿班率
+
+### 系統設定
+
+- 品牌設定
+- 多語系設定
+- 權限管理
+- API / Webhook
+- 自動化規則
+
+---
+
+## 6. 導覽原則
+
+1. 前台導向轉換，盡量縮短訪客到報名的距離。
+2. 學員端導向學習與付款，不混入管理功能。
+3. 員工端只顯示個人需要操作的項目。
+4. 管理端才承接跨部門設定、報表與系統級管理。
+
+
+FILE: docs/japanese-school-platform/02-modules-and-roles.md
+-----------------------------------------------------------
+# 模組功能與角色權限
+
+## 1. 核心模組
+
+### A. 官網招生系統
+
+功能：
+
+- 品牌展示
+- 課程介紹
+- 試聽預約
+- 線上報名
+- FAQ / 見證 / 內容行銷
+- 多語系切換
+- 聯絡入口整合
+
+AI 重點：
+
+- AI 客服聊天
+- AI 課程推薦
+- AI 名單蒐集與標籤
+
+### B. 招生 CRM 系統
+
+功能：
+
+- 名單匯入與來源追蹤
+- 顧問分配
+- 跟進紀錄
+- 試聽管理
+- 漏斗狀態
+- 自動提醒
+
+建議狀態：
+
+- 新名單
+- 已聯繫
+- 已回覆
+- 預約試聽
+- 已試聽
+- 猶豫中
+- 已報名
+- 候補中
+- 流失
+- 黑名單
+
+AI 重點：
+
+- 名單熱度分數
+- 成交機率預測
+- 跟進話術生成
+- 自動推送訊息
+- 廣告來源轉換分析
+
+### C. 課程與教學管理系統
+
+功能：
+
+- 課程建立
+- 班級建立
+- 課綱與章節
+- 排課
+- 教師分配
+- 教材與講義
+- 作業與測驗
+- 出缺勤
+- 課後回饋
+- 學習進度追蹤
+
+AI 重點：
+
+- 自動生成課綱
+- 自動產出教案
+- 自動出題
+- 學生弱點分析
+- 課後摘要與複習
+
+### D. 員工與校務管理系統
+
+功能：
+
+- 帳號與權限
+- 任務派發
+- 出勤與排班
+- KPI 管理
+- 日報 / 週報
+- 部門協作
+
+AI 重點：
+
+- 每日待辦整理
+- 未完成跟進提醒
+- 顧問匹配建議
+- 主管週報 / 月報生成
+
+### E. 招聘管理系統
+
+功能：
+
+- 招聘頁
+- 職缺管理
+- 履歷收件
+- 面試排程
+- 評分表
+- 錄取 / 婉拒流程
+- 試用期追蹤
+
+AI 重點：
+
+- 履歷解析
+- 人才匹配分數
+- 面試問題生成
+- 評語摘要
+- 通知信生成
+
+### F. 經營報表與決策中心
+
+功能：
+
+- 即時儀表板
+- 招生漏斗
+- 課程滿班率
+- 教師評價
+- 續報率
+- 流失率
+- 每月營收
+- 每班毛利
+
+AI 重點：
+
+- 週報 / 月報分析
+- 招生缺口預測
+- 開班建議
+- 流失預警
+
+---
+
+## 2. 使用者角色
+
+### 超級管理員
+
+可用範圍：
+
+- 全站設定
+- 權限管理
+- 所有資料檢視
+- 系統整合與 AI 規則設定
+
+### 校務主管
+
+可用範圍：
+
+- 查看招生進度
+- 查看教務與財務概況
+- 審核課程、排課與 KPI
+- 查看報表
+
+### 招生顧問
+
+可用範圍：
+
+- 處理名單
+- 安排試聽
+- 寫跟進紀錄
+- 管理個人成交
+
+### 教師
+
+可用範圍：
+
+- 查看自己的班級與課表
+- 上傳教材
+- 點名
+- 建立作業與測驗
+- 查看學生表現
+
+### 行政客服
+
+可用範圍：
+
+- 處理報名問題
+- 確認付款
+- 安排分班
+- 發送通知
+
+### 學員
+
+可用範圍：
+
+- 報名與付款
+- 查看課程與進度
+- 完成作業與測驗
+- 使用 AI 練習區
+
+---
+
+## 3. 權限模型建議
+
+建議採用 `RBAC + Scope`：
+
+- `role`
+  定義角色，如 admin、manager、consultant、teacher、staff、student。
+- `permission`
+  定義操作，如 read_leads、assign_leads、edit_courses、manage_payments。
+- `scope`
+  限縮資料範圍，如 only_assigned、only_self_classes、all_branch。
+
+這樣可以避免只靠單一角色判斷，後續多校區也比較好擴充。
+
+---
+
+## 4. 主要流程
+
+### 流程一：新名單進站
+
+1. 訪客進站
+2. AI 客服詢問需求
+3. 建立 lead
+4. AI 打分與標籤
+5. 指派招生顧問
+6. 發送歡迎與課程推薦
+
+### 流程二：試聽預約
+
+1. 學員選擇時段
+2. 建立試聽預約
+3. 更新 lead 狀態
+4. 發送提醒
+5. 試聽後問卷與跟進
+
+### 流程三：報名付款
+
+1. 填寫報名表
+2. 選班
+3. 付款
+4. 建立 enrollment / payment
+5. 建立 student 帳號
+6. 加入班級與通知
+
+### 流程四：教師教學
+
+1. 課前產生教案草稿
+2. 老師調整教材
+3. 上課點名
+4. 發作業 / 測驗
+5. AI 產生課後摘要
+
+### 流程五：招聘流程
+
+1. 職缺曝光
+2. 收履歷
+3. AI 解析與排序
+4. 面試排程
+5. 評分與匯總
+6. 發送結果
+
+---
+
+## 5. AI 助理分工
+
+### AI 招生助理
+
+- 網站聊天
+- LINE 對話
+- 名單蒐集
+- 課程推薦
+- 試聽安排
+
+### AI 教務助理
+
+- 教案產生
+- 練習題與測驗
+- 課後摘要
+- 回饋整理
+
+### AI 學習助理
+
+- 對話模擬
+- 複習提醒
+- 發音與弱點分析
+
+### AI 行政助理
+
+- 報名確認
+- 繳費通知
+- 候補整理
+- 班級名冊彙整
+
+### AI 主管助理
+
+- KPI 摘要
+- 漏斗分析
+- 營運週報 / 月報
+
+### AI HR 助理
+
+- 履歷篩選
+- 問題生成
+- 評語匯總
+- Offer / Reject 通知
+
+---
+
+## 6. 非功能需求
+
+1. 支援中文 / 日文多語。
+2. 前後台都需支援手機使用。
+3. 操作記錄需可追溯，特別是付款、排課、AI 動作。
+4. 敏感權限需保留 audit log。
+5. 通知、報表、AI 任務應走非同步 worker。
+
+
+FILE: docs/japanese-school-platform/03-data-model.md
+----------------------------------------------------
+# 資料模型與 ER 草案
+
+## 1. 核心實體分組
+
+建議把資料模型分成七組：
+
+1. 身分與權限
+2. 招生 CRM
+3. 課程與班級
+4. 學習與教務
+5. 財務
+6. 員工與招聘
+7. AI 與系統記錄
+
+---
+
+## 2. 核心資料表
+
+### 2.1 身分與權限
+
+#### `users`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| name | varchar | 顯示名稱 |
+| email | varchar | 登入信箱 |
+| phone | varchar | 手機 |
+| password_hash | varchar | 密碼雜湊 |
+| role | varchar | 主要角色 |
+| status | varchar | active / inactive / suspended |
+| locale | varchar | zh-TW / ja-JP |
+| created_at | timestamptz | 建立時間 |
+| updated_at | timestamptz | 更新時間 |
+
+#### `user_permissions`
+
+用來支援細粒度權限覆蓋。
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| user_id | uuid | 對應 users |
+| permission_key | varchar | 權限代碼 |
+| scope | varchar | all / self / assigned / branch |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.2 招生 CRM
+
+#### `leads`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| name | varchar | 姓名 |
+| phone | varchar | 手機 |
+| email | varchar | 信箱 |
+| line_id | varchar | LINE ID |
+| source_channel | varchar | 來源渠道 |
+| campaign_name | varchar | 廣告活動 |
+| interested_course_id | uuid | 感興趣課程 |
+| budget_range | varchar | 預算區間 |
+| japanese_level | varchar | 程度 |
+| study_goal | text | 學習目標 |
+| departure_plan_date | date | 預計赴日時間 |
+| intent_score | numeric | 意向分數 |
+| win_probability | numeric | 成交預測 |
+| status | varchar | 名單狀態 |
+| assigned_staff_id | uuid | 指派顧問 |
+| last_contact_at | timestamptz | 最後聯繫 |
+| next_follow_up_at | timestamptz | 下次跟進 |
+| notes | text | 備註 |
+| created_at | timestamptz | 建立時間 |
+| updated_at | timestamptz | 更新時間 |
+
+#### `lead_logs`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| lead_id | uuid | 對應 leads |
+| staff_id | uuid | 操作者 |
+| contact_method | varchar | line / call / email / meeting |
+| content | text | 跟進內容 |
+| next_action | text | 下一步 |
+| created_at | timestamptz | 建立時間 |
+
+#### `trial_bookings`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| lead_id | uuid | 對應 lead |
+| course_id | uuid | 試聽課程 |
+| class_id | uuid | 試聽班級，可空 |
+| slot_start_at | timestamptz | 試聽開始 |
+| slot_end_at | timestamptz | 試聽結束 |
+| status | varchar | booked / completed / canceled / no_show |
+| feedback | text | 試聽回饋 |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.3 學員與報名
+
+#### `students`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| user_id | uuid | 對應 users |
+| chinese_name | varchar | 中文姓名 |
+| english_name | varchar | 英文姓名 |
+| japanese_name | varchar | 日文姓名 |
+| gender | varchar | 性別 |
+| nationality | varchar | 國籍 |
+| native_language | varchar | 母語 |
+| age_group | varchar | 年齡層 |
+| city | varchar | 居住地 |
+| japanese_level | varchar | 日語程度 |
+| study_goal | text | 學習目標 |
+| source_channel | varchar | 來源 |
+| consultant_id | uuid | 負責顧問 |
+| status | varchar | active / inactive / graduated |
+| notes | text | 備註 |
+| created_at | timestamptz | 建立時間 |
+| updated_at | timestamptz | 更新時間 |
+
+#### `enrollments`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| student_id | uuid | 對應 student |
+| class_id | uuid | 對應 class |
+| lead_id | uuid | 對應來源 lead，可空 |
+| enrolled_at | timestamptz | 報名時間 |
+| status | varchar | pending / active / canceled / completed |
+| payment_status | varchar | unpaid / partial / paid / refunded |
+| coupon_code | varchar | 優惠碼 |
+| list_price | numeric | 原價 |
+| paid_amount | numeric | 實付金額 |
+| consultant_id | uuid | 經手顧問 |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.4 課程與班級
+
+#### `courses`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| slug | varchar | 前台網址識別 |
+| name | varchar | 課程名稱 |
+| course_type | varchar | 課程類型 |
+| level | varchar | 程度等級 |
+| description | text | 課程介紹 |
+| objectives | text | 課程目標 |
+| total_sessions | integer | 總堂數 |
+| session_minutes | integer | 每堂分鐘數 |
+| price | numeric | 費用 |
+| delivery_mode | varchar | online / offline / hybrid |
+| is_public | boolean | 是否公開 |
+| created_by | uuid | 建立者 |
+| created_at | timestamptz | 建立時間 |
+| updated_at | timestamptz | 更新時間 |
+
+#### `course_modules`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| course_id | uuid | 對應 courses |
+| title | varchar | 章節名稱 |
+| sort_order | integer | 排序 |
+| description | text | 內容說明 |
+| material_url | text | 教材連結 |
+
+#### `classes`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| course_id | uuid | 對應課程 |
+| name | varchar | 班級名稱 |
+| teacher_id | uuid | 對應 teacher |
+| start_date | date | 開課日 |
+| end_date | date | 結課日 |
+| weekday_mask | varchar | 上課星期 |
+| start_time | time | 開始時間 |
+| end_time | time | 結束時間 |
+| capacity | integer | 名額上限 |
+| enrolled_count | integer | 已報名數 |
+| location_label | varchar | 教室或線上標籤 |
+| meeting_url | text | 線上連結 |
+| status | varchar | draft / open / full / running / completed |
+| created_at | timestamptz | 建立時間 |
+| updated_at | timestamptz | 更新時間 |
+
+#### `class_sessions`
+
+把每堂課拆出來，後續才能做點名、補課、作業與教案。
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| class_id | uuid | 對應 classes |
+| module_id | uuid | 對應章節，可空 |
+| starts_at | timestamptz | 上課開始時間 |
+| ends_at | timestamptz | 上課結束時間 |
+| teacher_id | uuid | 當堂老師 |
+| classroom | varchar | 教室 |
+| meeting_url | text | 視訊連結 |
+| status | varchar | scheduled / done / canceled / makeup |
+| lesson_plan | text | 教案摘要 |
+
+---
+
+### 2.5 教務與學習
+
+#### `attendance`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| class_session_id | uuid | 對應課堂 |
+| student_id | uuid | 對應 student |
+| status | varchar | present / absent / late / leave |
+| notes | text | 備註 |
+| created_at | timestamptz | 建立時間 |
+
+#### `assignments`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| class_id | uuid | 對應班級 |
+| class_session_id | uuid | 對應課堂，可空 |
+| title | varchar | 標題 |
+| content | text | 作業內容 |
+| due_at | timestamptz | 截止時間 |
+| created_by | uuid | 建立者 |
+| created_at | timestamptz | 建立時間 |
+
+#### `assignment_submissions`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| assignment_id | uuid | 對應作業 |
+| student_id | uuid | 對應 student |
+| content | text | 繳交內容 |
+| score | numeric | 分數 |
+| feedback | text | 回饋 |
+| submitted_at | timestamptz | 繳交時間 |
+
+#### `exams`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| class_id | uuid | 對應班級 |
+| title | varchar | 測驗名稱 |
+| exam_type | varchar | placement / quiz / final |
+| total_score | numeric | 滿分 |
+| created_by | uuid | 建立者 |
+| created_at | timestamptz | 建立時間 |
+
+#### `exam_results`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| exam_id | uuid | 對應測驗 |
+| student_id | uuid | 對應學生 |
+| score | numeric | 分數 |
+| result_level | varchar | 等第 |
+| feedback | text | 回饋 |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.6 財務
+
+#### `payments`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| enrollment_id | uuid | 對應報名 |
+| order_no | varchar | 訂單號 |
+| amount | numeric | 金額 |
+| payment_method | varchar | card / transfer / cash / line_pay |
+| status | varchar | pending / paid / failed / refunded |
+| paid_at | timestamptz | 付款時間 |
+| invoice_data | jsonb | 發票資訊 |
+| gateway_payload | jsonb | 金流回傳 |
+| created_at | timestamptz | 建立時間 |
+
+#### `refunds`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| payment_id | uuid | 對應 payment |
+| amount | numeric | 退款金額 |
+| reason | text | 原因 |
+| status | varchar | pending / processed / rejected |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.7 教師、員工、招聘
+
+#### `teachers`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| user_id | uuid | 對應 users |
+| specialties | text | 擅長領域 |
+| years_experience | numeric | 年資 |
+| available_slots | jsonb | 可授課時段 |
+| bio | text | 自介 |
+| rating | numeric | 評分 |
+| contract_type | varchar | full_time / part_time |
+| pay_scheme | varchar | hourly / monthly / by_class |
+| created_at | timestamptz | 建立時間 |
+
+#### `staff`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| user_id | uuid | 對應 users |
+| department | varchar | 部門 |
+| title | varchar | 職稱 |
+| manager_id | uuid | 主管 |
+| hire_date | date | 到職日 |
+| kpi_target | jsonb | KPI 目標 |
+| status | varchar | active / leave / probation |
+| created_at | timestamptz | 建立時間 |
+
+#### `job_positions`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| title | varchar | 職缺名稱 |
+| department | varchar | 部門 |
+| description | text | 工作內容 |
+| requirements | text | 條件 |
+| salary_range | varchar | 薪資範圍 |
+| location | varchar | 地點 |
+| status | varchar | draft / open / closed |
+| created_at | timestamptz | 建立時間 |
+
+#### `applicants`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| position_id | uuid | 對應職缺 |
+| name | varchar | 姓名 |
+| email | varchar | 信箱 |
+| phone | varchar | 手機 |
+| resume_url | text | 履歷連結 |
+| interview_status | varchar | new / reviewing / scheduled / done |
+| ai_match_score | numeric | AI 匹配分數 |
+| notes | text | 備註 |
+| created_at | timestamptz | 建立時間 |
+
+#### `interviews`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| applicant_id | uuid | 對應 applicant |
+| interview_at | timestamptz | 面試時間 |
+| interviewer_id | uuid | 面試官 |
+| rating | numeric | 評分 |
+| summary | text | 評語 |
+| recommendation | varchar | hire / hold / reject |
+| result | varchar | pending / passed / rejected |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+### 2.8 通知與 AI 記錄
+
+#### `notifications`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| user_id | uuid | 對應 users |
+| channel | varchar | email / line / sms / in_app |
+| type | varchar | 類型 |
+| title | varchar | 標題 |
+| content | text | 內容 |
+| status | varchar | queued / sent / failed |
+| sent_at | timestamptz | 發送時間 |
+| created_at | timestamptz | 建立時間 |
+
+#### `ai_logs`
+
+| 欄位 | 型別 | 說明 |
+| --- | --- | --- |
+| id | uuid | 主鍵 |
+| module_name | varchar | 模組名稱 |
+| user_id | uuid | 觸發者 |
+| action_name | varchar | AI 動作 |
+| input_summary | text | 輸入摘要 |
+| output_summary | text | 輸出摘要 |
+| model_name | varchar | 使用模型 |
+| status | varchar | success / failed |
+| created_at | timestamptz | 建立時間 |
+
+---
+
+## 3. 關聯摘要
+
+核心關聯可先這樣理解：
+
+- `users` 1 對 1 `students`
+- `users` 1 對 1 `teachers`
+- `users` 1 對 1 `staff`
+- `leads` 1 對多 `lead_logs`
+- `leads` 1 對多 `trial_bookings`
+- `students` 1 對多 `enrollments`
+- `courses` 1 對多 `course_modules`
+- `courses` 1 對多 `classes`
+- `classes` 1 對多 `class_sessions`
+- `classes` 1 對多 `assignments`
+- `classes` 1 對多 `exams`
+- `enrollments` 1 對多 `payments`
+- `assignments` 1 對多 `assignment_submissions`
+- `exams` 1 對多 `exam_results`
+- `job_positions` 1 對多 `applicants`
+- `applicants` 1 對多 `interviews`
+
+---
+
+## 4. MVP 必要表
+
+如果第一階段先求可上線，最少先做：
+
+1. `users`
+2. `leads`
+3. `lead_logs`
+4. `students`
+5. `courses`
+6. `classes`
+7. `enrollments`
+8. `payments`
+9. `staff`
+10. `notifications`
+
+---
+
+## 5. 實作注意事項
+
+1. 金流、通知、AI 動作都要保留原始 payload，避免除錯困難。
+2. `class_sessions` 不要省略，否則後續點名、補課、單堂教材會很難做。
+3. `leads` 與 `students` 要可追溯轉換，方便看轉換率。
+4. AI 產物要標示來源、模型與操作者，方便後續審計。
+5. 若規劃多校區，建議多加 `branch_id` 到大多數核心表。
+
+
+FILE: docs/japanese-school-platform/04-roadmap-and-prd.md
+---------------------------------------------------------
+# 開發 Roadmap 與 PRD 摘要
+
+## 1. 產品目標
+
+打造一個可支援招生、報名、班級管理、教學支援、員工協作與 AI 自動化的日語補習班營運平台，讓團隊先能穩定招生與開課，再逐步升級成可複製到多校區的 SaaS 系統。
+
+---
+
+## 2. MVP 範圍
+
+### MVP 必做
+
+- 前台首頁與課程頁
+- 報名表單
+- 試聽預約
+- AI 客服入口
+- 招生 CRM
+- 招生進度追蹤
+- 課程管理
+- 班級管理
+- 後台帳號與角色
+- 基本付款系統
+- Email / LINE 通知
+
+### MVP 不做
+
+- AI 發音評分
+- Franchise 加盟校
+- 全自動排課
+- 進階財務會計
+- 多校區資源共享
+
+---
+
+## 3. 分階段開發
+
+### Phase 1：招生啟動版
+
+目標：
+
+先讓網站可接名單、可追蹤、可成交、可付款。
+
+交付：
+
+- 官網首頁
+- 課程總覽 / 課程詳情
+- 試聽預約
+- 報名流程
+- CRM 名單列表
+- 名單狀態與跟進紀錄
+- 顧問指派
+- 訂單 / 付款紀錄
+- 基本通知
+
+驗收指標：
+
+- 名單可自動建立
+- 顧問可追蹤跟進
+- 學員可完成報名付款
+- 管理端可查看來源與轉換
+
+### Phase 2：教務上線版
+
+目標：
+
+把開課、教學、學員操作拉進平台。
+
+交付：
+
+- 學員中心
+- 我的課程 / 作業 / 測驗
+- 課程章節管理
+- 班級與每堂課管理
+- 出缺勤
+- 教師工作台
+- AI 教案與作業草稿
+
+驗收指標：
+
+- 教師可完成點名與作業發布
+- 學員可查看進度與提交作業
+- 管理端可看缺課與學習狀態
+
+### Phase 3：營運升級版
+
+目標：
+
+把員工、招聘、報表與預測能力補齊。
+
+交付：
+
+- KPI 與任務看板
+- 員工出勤 / 排班
+- 招聘系統
+- 主管儀表板
+- AI 營運分析
+- AI 招聘助理
+
+驗收指標：
+
+- 主管可看完整營運週報
+- 招聘流程可在系統內完成
+- 員工績效可被量化追蹤
+
+---
+
+## 4. 建議開發順序
+
+1. 品牌與課程線定義
+2. 前台招生站與 AI 客服
+3. CRM 與招生追蹤
+4. 課程 / 班級 / 排課
+5. 學員系統與教學功能
+6. KPI / 招聘 / 主管報表
+7. AI 全面自動化升級
+
+---
+
+## 5. 首版 API Domain 建議
+
+可先依 domain 分模組：
+
+- `auth`
+- `public-site`
+- `leads`
+- `students`
+- `courses`
+- `classes`
+- `enrollments`
+- `payments`
+- `notifications`
+- `ai-assistant`
+- `staff`
+- `recruiting`
+- `analytics`
+
+---
+
+## 6. PRD 摘要
+
+### 6.1 問題陳述
+
+目前語言補習班常見問題：
+
+- 招生資料分散在網站、表單、LINE、試算表
+- 教務與招生割裂
+- 課程與班級資料不一致
+- 報表仰賴人工整理
+- 招聘流程分散且難比較
+
+### 6.2 目標使用者
+
+- 準備赴日生活的華人學員
+- 招生顧問
+- 教師
+- 行政客服
+- 校務主管
+- HR / 老闆
+
+### 6.3 核心價值
+
+1. 一站式招生到開課
+2. AI 協助提升回應與教學效率
+3. 後台資料集中，能直接做營運決策
+
+### 6.4 成功指標
+
+- 名單回覆時間縮短
+- 試聽到報名轉換率提升
+- 顧問跟進遺漏率下降
+- 開課準備時間下降
+- 缺課與流失率可視化
+- 主管週報製作時間下降
+
+### 6.5 風險與注意
+
+1. 若一開始模組做太大，交付會拖慢，所以 MVP 要嚴格收斂。
+2. AI 只能做輔助，金流、排課、錄取決策仍需人工覆核。
+3. LINE / 金流 / 信箱整合要提早確認供應商與 API 限制。
+4. 若未來打算 SaaS 化，從第一版就要避免寫死單一校區設定。
+
+---
+
+## 7. 下一步建議
+
+這份文件完成後，最適合直接往下做兩件事：
+
+1. 先把 `03-data-model.md` 轉成 PostgreSQL schema。
+2. 直接切出前後端 MVP 任務清單與 wireframe。
+
+
+FILE: docs/japanese-school-platform/05-mvp-backlog.md
+-----------------------------------------------------
+# MVP 開發 Backlog
+
+## 1. 使用方式
+
+這份文件是給產品、設計、前端、後端一起用的 MVP 實作清單。切法原則：
+
+1. 先做能完成招生與報名閉環的功能。
+2. 先做高依賴、低爭議的底層模組。
+3. AI 功能先做輔助與摘要，不先做高風險全自動決策。
+
+---
+
+## 2. MVP 產品範圍
+
+MVP 只聚焦四個結果：
+
+1. 訪客可以看課程、預約試聽、送出報名。
+2. 招生顧問可以管理名單、跟進、安排試聽。
+3. 行政可以建立課程與班級、確認付款。
+4. 管理者可以看基本轉換與營收概況。
+
+---
+
+## 3. 前端頁面清單
+
+### P0 前台頁面
+
+#### `/`
+
+目的：
+
+- 品牌說明
+- 導向課程、試聽、報名
+- 放 AI 客服入口
+
+主要區塊：
+
+- Hero
+- 課程分類
+- 報名流程
+- 學員見證
+- FAQ
+- CTA
+
+依賴 API：
+
+- `GET /api/public/home`
+- `GET /api/public/courses/featured`
+
+#### `/courses`
+
+目的：
+
+- 顯示公開課程列表
+
+主要區塊：
+
+- 篩選條件
+- 課程卡片
+- 課程類型 / 程度標籤
+
+依賴 API：
+
+- `GET /api/public/courses`
+
+#### `/courses/[slug]`
+
+目的：
+
+- 顯示課程詳情與報名入口
+
+主要區塊：
+
+- 課程介紹
+- 適合對象
+- 課綱
+- 師資
+- 費用
+- 可報名班級
+- CTA
+
+依賴 API：
+
+- `GET /api/public/courses/:slug`
+- `GET /api/public/courses/:slug/classes`
+
+#### `/trial-booking`
+
+目的：
+
+- 建立試聽預約
+
+主要區塊：
+
+- 課程選擇
+- 可預約時段
+- 基本資料
+- 程度 / 目標
+- LINE 綁定選填
+
+依賴 API：
+
+- `GET /api/public/trial-slots`
+- `POST /api/public/trial-bookings`
+
+#### `/apply`
+
+目的：
+
+- 建立正式報名與付款流程
+
+主要區塊：
+
+- 學員資料
+- 課程 / 班級
+- 優惠碼
+- 付款資訊
+- 完成頁
+
+依賴 API：
+
+- `GET /api/public/classes/open`
+- `POST /api/public/enrollments`
+- `POST /api/public/payments/create-intent`
+
+#### `/jobs`
+
+目的：
+
+- 顯示職缺列表與應徵入口
+
+依賴 API：
+
+- `GET /api/public/jobs`
+- `POST /api/public/applicants`
+
+---
+
+### P0 後台頁面
+
+#### `/admin/login`
+
+目的：
+
+- 員工登入
+
+依賴 API：
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+#### `/admin`
+
+目的：
+
+- 管理者總儀表板
+
+主要區塊：
+
+- 今日新名單
+- 本週報名數
+- 試聽轉換率
+- 待處理事項
+
+依賴 API：
+
+- `GET /api/admin/dashboard`
+
+#### `/admin/leads`
+
+目的：
+
+- 名單總覽與篩選
+
+主要區塊：
+
+- 狀態篩選
+- 顧問篩選
+- 來源篩選
+- 名單表格
+
+依賴 API：
+
+- `GET /api/leads`
+- `PATCH /api/leads/:id`
+- `POST /api/leads/:id/assign`
+
+#### `/admin/leads/[id]`
+
+目的：
+
+- 查看名單詳情與跟進紀錄
+
+主要區塊：
+
+- 基本資料
+- 意向分數
+- 跟進時間軸
+- 試聽紀錄
+- AI 建議話術
+
+依賴 API：
+
+- `GET /api/leads/:id`
+- `GET /api/leads/:id/logs`
+- `POST /api/leads/:id/logs`
+- `POST /api/ai/leads/:id/followup-draft`
+
+#### `/admin/courses`
+
+目的：
+
+- 管理課程
+
+依賴 API：
+
+- `GET /api/courses`
+- `POST /api/courses`
+- `PATCH /api/courses/:id`
+
+#### `/admin/classes`
+
+目的：
+
+- 管理班級與開班
+
+依賴 API：
+
+- `GET /api/classes`
+- `POST /api/classes`
+- `PATCH /api/classes/:id`
+
+#### `/admin/enrollments`
+
+目的：
+
+- 查看報名與付款狀態
+
+依賴 API：
+
+- `GET /api/enrollments`
+- `PATCH /api/enrollments/:id`
+- `GET /api/payments`
+- `PATCH /api/payments/:id`
+
+#### `/admin/staff`
+
+目的：
+
+- 帳號與角色維護
+
+依賴 API：
+
+- `GET /api/staff`
+- `POST /api/staff`
+- `PATCH /api/staff/:id`
+
+---
+
+## 4. 後端 API Backlog
+
+### Epic A：Auth 與權限
+
+#### A-1 登入與 Session
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+
+完成條件：
+
+- 可用 email + password 登入
+- 回傳角色與基本權限
+
+資料表依賴：
+
+- `users`
+- `user_permissions`
+
+#### A-2 Route Guard
+
+- 前台公開 API 與後台 API 分權
+- 支援 `admin`、`manager`、`consultant`、`staff`
+
+---
+
+### Epic B：Public Site
+
+#### B-1 公開課程列表
+
+- `GET /api/public/home`
+- `GET /api/public/courses`
+- `GET /api/public/courses/:slug`
+- `GET /api/public/courses/:slug/classes`
+
+資料表依賴：
+
+- `courses`
+- `course_modules`
+- `classes`
+- `teachers`
+
+#### B-2 試聽預約
+
+- `GET /api/public/trial-slots`
+- `POST /api/public/trial-bookings`
+
+完成條件：
+
+- 可建立名單
+- 可建立 trial booking
+- 可發送確認通知
+
+資料表依賴：
+
+- `leads`
+- `trial_bookings`
+- `notifications`
+
+#### B-3 正式報名
+
+- `GET /api/public/classes/open`
+- `POST /api/public/enrollments`
+
+完成條件：
+
+- 若學員尚未存在，先建立 lead 或 student
+- 建立 enrollment 待付款狀態
+
+資料表依賴：
+
+- `students`
+- `classes`
+- `enrollments`
+
+#### B-4 招聘公開入口
+
+- `GET /api/public/jobs`
+- `POST /api/public/applicants`
+
+---
+
+### Epic C：Leads CRM
+
+#### C-1 名單列表
+
+- `GET /api/leads`
+- 支援狀態、來源、顧問、日期篩選
+
+#### C-2 名單詳情
+
+- `GET /api/leads/:id`
+- `PATCH /api/leads/:id`
+
+#### C-3 跟進紀錄
+
+- `GET /api/leads/:id/logs`
+- `POST /api/leads/:id/logs`
+
+#### C-4 指派與狀態流轉
+
+- `POST /api/leads/:id/assign`
+- `POST /api/leads/:id/change-status`
+
+#### C-5 試聽整合
+
+- `GET /api/trial-bookings`
+- `PATCH /api/trial-bookings/:id`
+
+資料表依賴：
+
+- `leads`
+- `lead_logs`
+- `trial_bookings`
+- `staff`
+
+---
+
+### Epic D：Courses 與 Classes
+
+#### D-1 課程管理
+
+- `GET /api/courses`
+- `POST /api/courses`
+- `PATCH /api/courses/:id`
+
+#### D-2 課綱章節
+
+- `GET /api/courses/:id/modules`
+- `POST /api/courses/:id/modules`
+- `PATCH /api/course-modules/:id`
+
+#### D-3 班級管理
+
+- `GET /api/classes`
+- `POST /api/classes`
+- `PATCH /api/classes/:id`
+
+資料表依賴：
+
+- `courses`
+- `course_modules`
+- `classes`
+- `teachers`
+
+---
+
+### Epic E：Enrollment 與 Payment
+
+#### E-1 報名清單
+
+- `GET /api/enrollments`
+- `GET /api/enrollments/:id`
+- `PATCH /api/enrollments/:id`
+
+#### E-2 金流建立與回寫
+
+- `POST /api/public/payments/create-intent`
+- `POST /api/payments/webhook`
+- `GET /api/payments`
+- `PATCH /api/payments/:id`
+
+完成條件：
+
+- 建立訂單
+- 可接收付款成功 webhook
+- 成功後更新 enrollment 狀態
+
+資料表依賴：
+
+- `payments`
+- `enrollments`
+- `notifications`
+
+---
+
+### Epic F：Dashboard 與報表
+
+#### F-1 管理儀表板
+
+- `GET /api/admin/dashboard`
+
+最小輸出：
+
+- 今日新名單數
+- 本週試聽數
+- 本週報名數
+- 已付款訂單總額
+- 待跟進名單數
+
+資料表依賴：
+
+- `leads`
+- `trial_bookings`
+- `enrollments`
+- `payments`
+
+---
+
+### Epic G：AI Assistants
+
+#### G-1 AI 招生話術草稿
+
+- `POST /api/ai/leads/:id/followup-draft`
+
+輸入：
+
+- lead 基本資料
+- 最近跟進紀錄
+
+輸出：
+
+- LINE 版話術
+- Email 版話術
+- 下一步建議
+
+#### G-2 AI 課程推薦
+
+- `POST /api/ai/public/course-recommendation`
+
+輸入：
+
+- 程度
+- 目標
+- 預計赴日時間
+
+輸出：
+
+- 推薦課程
+- 推薦理由
+
+注意：
+
+- MVP 不讓 AI 直接改資料庫，只回傳建議。
+
+---
+
+## 5. 資料表落地優先順序
+
+### Sprint 1 必建
+
+- `users`
+- `user_permissions`
+- `staff`
+- `courses`
+- `classes`
+- `leads`
+- `lead_logs`
+- `trial_bookings`
+
+### Sprint 2 必建
+
+- `students`
+- `enrollments`
+- `payments`
+- `notifications`
+
+### Sprint 3 可補
+
+- `course_modules`
+- `teachers`
+- `job_positions`
+- `applicants`
+- `ai_logs`
+
+---
+
+## 6. 非同步任務 Backlog
+
+### Job-1 試聽預約確認通知
+
+觸發：
+
+- 建立 `trial_booking` 後
+
+動作：
+
+- 寄送 Email
+- 發送 LINE
+- 建立站內通知
+
+### Job-2 跟進提醒
+
+觸發：
+
+- 每日排程掃描 `next_follow_up_at`
+
+動作：
+
+- 提醒顧問今日待跟進名單
+
+### Job-3 付款成功通知
+
+觸發：
+
+- 金流 webhook 成功
+
+動作：
+
+- 更新付款狀態
+- 發送報名成功通知
+
+### Job-4 AI 話術生成
+
+觸發：
+
+- 顧問在名單頁手動點擊
+
+動作：
+
+- 寫入 `ai_logs`
+- 回傳跟進草稿
+
+---
+
+## 7. Sprint 切分建議
+
+## Sprint 1：可收名單
+
+目標：
+
+- 官網可上線
+- 可建立 lead
+- 後台可看名單
+
+前端：
+
+- 首頁
+- 課程列表
+- 課程詳情
+- 試聽預約表單
+- 管理登入頁
+- 名單列表頁
+
+後端：
+
+- auth
+- public courses
+- public trial booking
+- leads CRUD 基礎版
+
+驗收：
+
+- 訪客可預約試聽
+- 後台可看到名單與狀態
+
+## Sprint 2：可完成報名付款
+
+目標：
+
+- 學員可正式報名
+- 行政可追付款
+
+前端：
+
+- 報名頁
+- 後台 enrollments 頁
+- payments 頁
+
+後端：
+
+- enrollments
+- payments
+- 通知任務
+- dashboard 基礎版
+
+驗收：
+
+- 報名後可生成訂單
+- 付款成功會更新狀態
+
+## Sprint 3：可營運追蹤
+
+目標：
+
+- 顧問與主管開始用得起來
+
+前端：
+
+- lead 詳情頁
+- dashboard
+- staff 管理頁
+
+後端：
+
+- lead logs
+- assign lead
+- AI followup draft
+- dashboard metrics
+
+驗收：
+
+- 顧問可寫跟進紀錄
+- 主管可看基本營運數字
+
+---
+
+## 8. 設計稿優先順序
+
+設計不用一次全畫，先畫這 8 張就夠：
+
+1. 首頁
+2. 課程總覽
+3. 課程詳情
+4. 試聽預約表單
+5. 報名付款頁
+6. 管理登入頁
+7. 名單列表頁
+8. 名單詳情頁
+
+---
+
+## 9. 工程分工建議
+
+### 前端工程
+
+- 公開網站頁面
+- 表單流程
+- 後台列表與詳情頁
+- 權限導頁
+
+### 後端工程
+
+- auth / RBAC
+- leads / enrollments / payments API
+- dashboard aggregation
+- queue jobs
+
+### 設計
+
+- 公開站視覺
+- 表單 UX
+- 後台資訊密度與狀態標籤
+
+### PM / 營運
+
+- 課程內容
+- 名單狀態規則
+- 通知文案
+- AI 話術審稿規則
+
+---
+
+## 10. 驗收清單
+
+### 業務驗收
+
+- 訪客從首頁到送出試聽不超過 3 分鐘。
+- 顧問可在 1 分鐘內找到新名單並開始跟進。
+- 行政可清楚區分未付款、已付款、取消報名。
+
+### 技術驗收
+
+- 後台 API 都需權限控管。
+- 金流 webhook 要可重送且不重複入帳。
+- 所有通知要保留發送狀態。
+- 所有名單狀態變更要可追溯。
+
+### AI 驗收
+
+- AI 話術輸出需附推薦理由。
+- AI 推薦課程不可直接替代人工確認。
+- AI 操作需保留記錄。
+
+
+FILE: docs/japanese-school-platform/06-frontend-workstream.md
+-------------------------------------------------------------
+# Frontend Workstream
+
+This document translates the platform sitemap and MVP backlog into a frontend delivery spec. Scope is frontend only: routes, page responsibilities, shared UI inventory, data/state needs, form flows, and a three-sprint delivery order.
+
+## 1. Frontend Scope
+
+The frontend is split into four entry surfaces:
+
+1. Public marketing site
+2. Student portal
+3. Staff workspace
+4. Admin console
+
+The MVP frontend should optimize for one business loop first:
+
+`visit -> course view -> trial booking or application -> lead capture -> payment -> confirmation`
+
+Everything else should support that loop without blocking it.
+
+---
+
+## 2. Route Map
+
+### 2.1 Public Site
+
+- `/`
+  - Brand landing page
+  - Primary CTA to trial booking and application
+- `/about`
+  - Brand story, teaching philosophy, team
+- `/courses`
+  - Public course catalog
+- `/courses/[slug]`
+  - Course detail page with classes and CTA
+- `/trial-booking`
+  - Trial lesson booking flow
+- `/apply`
+  - Enrollment and payment flow
+- `/faq`
+  - Common questions and objections
+- `/testimonials`
+  - Student success stories
+- `/contact`
+  - Contact methods and inquiry form
+- `/jobs`
+  - Public recruiting page
+
+### 2.2 Student Portal
+
+- `/student`
+  - Student dashboard
+- `/student/courses`
+  - Enrolled courses and schedules
+- `/student/homework`
+  - Assignments and submissions
+- `/student/exams`
+  - Quiz and exam results
+- `/student/payments`
+  - Order and payment history
+- `/student/notifications`
+  - In-app messages
+- `/student/ai-practice`
+  - AI learning practice space
+
+### 2.3 Staff Workspace
+
+- `/staff`
+  - Staff dashboard
+- `/staff/leads`
+  - Assigned leads and follow-ups
+- `/staff/leads/[id]`
+  - Lead detail, notes, timeline, AI draft
+- `/staff/tasks`
+  - Task list and follow-up reminders
+- `/staff/classes`
+  - My classes and teaching schedule
+- `/staff/performance`
+  - Personal KPI summary
+
+### 2.4 Admin Console
+
+- `/admin/login`
+  - Authentication entry
+- `/admin`
+  - Operational dashboard
+- `/admin/leads`
+  - CRM list and filtering
+- `/admin/leads/[id]`
+  - Lead detail and pipeline control
+- `/admin/courses`
+  - Course management
+- `/admin/classes`
+  - Class management and openings
+- `/admin/enrollments`
+  - Enrollment and payment review
+- `/admin/staff`
+  - Employees and role management
+
+---
+
+## 3. Page Responsibilities
+
+### 3.1 Public Site
+
+#### `/`
+
+Responsibilities:
+
+- Explain the brand in one screen
+- Surface the main course categories
+- Drive users to trial booking or application
+- Capture trust through testimonials and FAQ
+- Expose AI chat as a conversion helper
+
+#### `/courses`
+
+Responsibilities:
+
+- Present public courses in a scannable list
+- Support filtering by goal, level, and delivery mode
+- Route users into the right course detail page
+
+#### `/courses/[slug]`
+
+Responsibilities:
+
+- Explain one course clearly
+- Show who it is for, what it includes, and how it runs
+- Show open classes and clear CTAs
+
+#### `/trial-booking`
+
+Responsibilities:
+
+- Collect lead data with minimal friction
+- Let users choose a time slot
+- Capture goal and current Japanese level
+
+#### `/apply`
+
+Responsibilities:
+
+- Collect enrollment details
+- Let users choose class and payment method
+- Confirm the enrollment and payment outcome
+
+#### `/jobs`
+
+Responsibilities:
+
+- List open roles
+- Convert candidates into applicants through one form
+
+### 3.2 Student Portal
+
+#### `/student`
+
+Responsibilities:
+
+- Show a personal learning snapshot
+- Surface next class, pending work, and payment reminders
+
+#### `/student/courses`
+
+Responsibilities:
+
+- Show active and completed enrollments
+- Show course schedule, materials, and class links
+
+#### `/student/homework`
+
+Responsibilities:
+
+- Show pending assignments
+- Support homework submission and review status
+
+#### `/student/exams`
+
+Responsibilities:
+
+- Show test history and scores
+- Display simple learning progress signals
+
+#### `/student/payments`
+
+Responsibilities:
+
+- Show order history and invoice data
+- Expose payment status clearly
+
+#### `/student/ai-practice`
+
+Responsibilities:
+
+- Offer practice exercises
+- Show AI-generated summaries and weak-point hints
+
+### 3.3 Staff Workspace
+
+#### `/staff`
+
+Responsibilities:
+
+- Show daily tasks, follow-ups, and class schedule
+
+#### `/staff/leads`
+
+Responsibilities:
+
+- Show assigned leads only
+- Make follow-up actions fast and repeatable
+
+#### `/staff/leads/[id]`
+
+Responsibilities:
+
+- Show lead profile, timeline, notes, and next action
+- Provide AI follow-up draft as an assistive action
+
+#### `/staff/tasks`
+
+Responsibilities:
+
+- Show task queue and overdue items
+
+#### `/staff/classes`
+
+Responsibilities:
+
+- Show teaching schedule and class access points
+
+#### `/staff/performance`
+
+Responsibilities:
+
+- Summarize lead handling, trial count, and conversion output
+
+### 3.4 Admin Console
+
+#### `/admin`
+
+Responsibilities:
+
+- Provide the operational overview
+- Highlight the metrics that need attention now
+
+#### `/admin/leads`
+
+Responsibilities:
+
+- Manage the lead funnel
+- Filter by source, owner, stage, and follow-up date
+
+#### `/admin/leads/[id]`
+
+Responsibilities:
+
+- Show full lead context
+- Allow assignment, status transitions, and note history
+
+#### `/admin/courses`
+
+Responsibilities:
+
+- Create and edit public courses
+- Toggle public visibility
+
+#### `/admin/classes`
+
+Responsibilities:
+
+- Create classes
+- Assign teachers
+- Control capacity and schedule visibility
+
+#### `/admin/enrollments`
+
+Responsibilities:
+
+- Review enrollment and payment state
+- Confirm or correct operational records
+
+#### `/admin/staff`
+
+Responsibilities:
+
+- Manage staff accounts, roles, and basic profile data
+
+---
+
+## 4. Shared Component Inventory
+
+### 4.1 Layout
+
+- `PublicShell`
+- `StudentShell`
+- `StaffShell`
+- `AdminShell`
+- `TopNav`
+- `SideNav`
+- `Footer`
+- `MobileMenu`
+- `Breadcrumbs`
+
+### 4.2 Conversion Components
+
+- `HeroBanner`
+- `CourseCard`
+- `CourseFilterBar`
+- `TestimonialCarousel`
+- `FaqAccordion`
+- `CtaStrip`
+- `TrustBadgeRow`
+- `LeadCaptureForm`
+- `TrialBookingForm`
+- `EnrollmentForm`
+- `PaymentSummaryCard`
+
+### 4.3 Data Display Components
+
+- `MetricCard`
+- `StatusBadge`
+- `Timeline`
+- `DataTable`
+- `EmptyState`
+- `LoadingSkeleton`
+- `InlineError`
+- `PillFilter`
+- `SearchInput`
+
+### 4.4 Operational Components
+
+- `LeadTimeline`
+- `LeadNotesPanel`
+- `AssignmentList`
+- `ClassScheduleGrid`
+- `PaymentStatusPanel`
+- `NotificationInbox`
+- `PerformanceSummary`
+- `AiSuggestionPanel`
+
+### 4.5 Form Components
+
+- `TextField`
+- `TextAreaField`
+- `SelectField`
+- `MultiSelectField`
+- `DatePicker`
+- `TimeSlotPicker`
+- `PhoneField`
+- `EmailField`
+- `FileUploadField`
+- `OtpField`
+- `SubmitBar`
+
+---
+
+## 5. State and Data Needs
+
+### 5.1 Global State
+
+Required frontend global state:
+
+- authenticated user
+- current role
+- permissions and scope
+- locale and language
+- notification count
+- selected branch if multi-branch is enabled later
+
+Recommended state ownership:
+
+- server state for records and lists
+- local state for form inputs and modal interactions
+- URL state for filters and pagination
+
+### 5.2 Public Site State
+
+Needs:
+
+- course list
+- featured courses
+- open classes by course
+- FAQ content
+- testimonials
+- trial slot availability
+
+Caching guidance:
+
+- cache marketing content aggressively
+- revalidate course and FAQ data on deploy or CMS change
+
+### 5.3 CRM State
+
+Needs:
+
+- lead list
+- lead detail
+- lead logs
+- trial booking list
+- assigned staff
+- follow-up timestamps
+
+UI behavior:
+
+- filter state must stay in the URL
+- lead detail should preserve timeline scroll and selected tab
+
+### 5.4 Enrollment and Payment State
+
+Needs:
+
+- selected course
+- selected class
+- student identity
+- coupon code
+- payment intent or order status
+
+UI behavior:
+
+- preserve form progress across step changes
+- show final confirmation state clearly
+
+### 5.5 Student Portal State
+
+Needs:
+
+- enrolled courses
+- current class sessions
+- assignments
+- exam results
+- payment history
+- notifications
+
+UI behavior:
+
+- show only relevant active items first
+- allow empty states to guide first actions
+
+### 5.6 Staff/Admin State
+
+Needs:
+
+- assigned leads or all leads depending on scope
+- class schedules
+- task queue
+- KPI metrics
+- admin summaries
+
+UI behavior:
+
+- table filters must be fast and persistent
+- destructive actions need confirmation
+
+---
+
+## 6. Form Flows
+
+### 6.1 Trial Booking Flow
+
+Steps:
+
+1. Choose course or goal
+2. Choose available slot
+3. Enter name, phone, email, Japanese level, and goal
+4. Optionally connect LINE
+5. Review and submit
+6. Show success page and next-step guidance
+
+Validation rules:
+
+- name, phone, and one contact method are required
+- slot must be available at submit time
+- duplicate lead detection should warn, not hard fail
+
+### 6.2 Enrollment Flow
+
+Steps:
+
+1. Choose course
+2. Choose class
+3. Enter student profile
+4. Apply coupon if available
+5. Review fee summary
+6. Pay
+7. Show confirmation and account next steps
+
+Validation rules:
+
+- class capacity must be checked before payment intent creation
+- required profile fields should be validated before payment
+- show payment failure recovery path
+
+### 6.3 Lead Follow-up Flow
+
+Steps:
+
+1. Open lead detail
+2. Add note or follow-up action
+3. Use AI draft if needed
+4. Change status
+5. Schedule next follow-up
+
+Validation rules:
+
+- notes cannot be empty if next action is created
+- only assigned or permitted staff can update the lead
+
+### 6.4 Course and Class Management Flow
+
+Steps:
+
+1. Create course
+2. Add course modules
+3. Create class
+4. Assign teacher and schedule
+5. Open class for enrollment
+
+Validation rules:
+
+- class cannot open without teacher and schedule
+- capacity must be greater than enrolled count
+
+### 6.5 Applicant Flow
+
+Steps:
+
+1. Open jobs page
+2. Choose role
+3. Fill application form
+4. Upload resume
+5. Submit
+6. Show acknowledgment
+
+Validation rules:
+
+- required fields must be completed before file upload is accepted
+
+---
+
+## 7. Delivery Order for 3 Sprints
+
+### Sprint 1: Public Conversion Core
+
+Goal:
+
+Ship the minimum public experience that can generate leads.
+
+Deliver:
+
+- public shell and responsive layout
+- homepage
+- course list
+- course detail
+- trial booking form
+- application form
+- success pages
+- shared conversion components
+
+Frontend priorities:
+
+- form UX
+- mobile responsiveness
+- clear CTAs
+- fast loading public pages
+
+### Sprint 2: Admin and Staff Operations
+
+Goal:
+
+Let internal users handle leads, courses, and enrollments.
+
+Deliver:
+
+- admin login
+- admin dashboard
+- lead list
+- lead detail
+- course management
+- class management
+- enrollment and payment review
+- staff workspace shell
+- lead follow-up panel
+
+Frontend priorities:
+
+- dense but readable data tables
+- filters and saved query state
+- timeline and detail views
+- role-based navigation
+
+### Sprint 3: Student Portal and AI Assist
+
+Goal:
+
+Add the learner experience and AI-assisted productivity features.
+
+Deliver:
+
+- student dashboard
+- enrolled courses view
+- homework and exam views
+- notifications center
+- AI practice area
+- AI follow-up draft panel
+- performance summary cards
+
+Frontend priorities:
+
+- clear empty states
+- progressive disclosure
+- low-friction learning actions
+- AI suggestions as assistive, not mandatory
+
+---
+
+## 8. Recommended Frontend Architecture
+
+- Next.js App Router
+- Server Components for data-heavy pages where practical
+- Client Components for forms, filters, tables, and interactive panels
+- Route groups for `public`, `student`, `staff`, and `admin`
+- Shared UI primitives in a single design system layer
+- React Query or equivalent for server state if the team prefers explicit client caching
+- Zod or similar schema validation shared with form logic
+
+---
+
+## 9. Frontend Acceptance Criteria
+
+- Public pages are usable on mobile and desktop.
+- Trial and enrollment flows are reachable within three to four interactions from the homepage.
+- Admin and staff pages enforce role-based access at the UI level.
+- Forms preserve partial input and surface validation clearly.
+- AI panels never block manual completion of a task.
+- Empty states always suggest the next useful action.
+
+---
+
+## 10. Notes for Execution
+
+- Treat marketing content as static-ish and optimize for speed.
+- Treat CRM and operational pages as server-driven, filterable, and auditable.
+- Keep AI features additive in the UI, never mandatory for core workflows.
+- Preserve a clear separation between public conversion content and authenticated operations.
+
+
+FILE: docs/japanese-school-platform/07-backend-workstream.md
+------------------------------------------------------------
+# Backend Workstream
+
+## 1. 目的
+
+這份文件定義 AI 日語補習班營運平台的 MVP 後端執行方式。原則是先做成可穩定上線的「模組化單體後端」，把招生、報名、課程、通知、AI 輔助與報表的核心能力先收斂在同一個服務邊界內，避免第一版就陷入過度微服務化。
+
+---
+
+## 2. 後端總體策略
+
+### 2.1 MVP 架構選擇
+
+建議第一版採用：
+
+- `NestJS` 作為主要 API 後端
+- `PostgreSQL` 作為主資料庫
+- `Redis` 作為 queue、cache、rate limit 與短期狀態儲存
+- `Worker process` 負責通知、AI 摘要、同步 webhook、排程任務
+
+理由：
+
+1. 後台模組多，NestJS 的 module / provider 邊界清楚。
+2. RBAC、guard、pipe、scheduler 與 webhook 驗證較容易標準化。
+3. MVP 階段先不要切成多個獨立微服務，避免部署與觀測成本過高。
+
+### 2.2 服務邊界
+
+MVP 先分成 4 個 runtime 邊界：
+
+- `api`
+  對外 HTTP API，承接前台、學員端、員工端、管理端。
+- `worker`
+  非同步任務處理，包含通知、AI 草稿、報表匯總、重試。
+- `scheduler`
+  定時任務入口，可與 worker 合併執行，但概念上獨立。
+- `webhook receiver`
+  金流、LINE、第三方通知事件入口，實作上可直接掛在 `api` 中，但需獨立 module 與 log。
+
+### 2.3 不在 MVP 切出的服務
+
+第一版先不拆：
+
+- 獨立 AI service
+- 獨立通知 service
+- 獨立報表 service
+- 獨立搜尋 service
+
+這些都先以模組方式存在，等量體變大再拆。
+
+---
+
+## 3. Backend Module Map
+
+### 3.1 `auth` module
+
+責任：
+
+- 登入
+- 登出
+- session / JWT 管理
+- refresh token
+- 密碼重設
+- email OTP
+
+對應路由：
+
+- `POST /api/auth/login`
+- `POST /api/auth/logout`
+- `GET /api/auth/me`
+- `POST /api/auth/refresh`
+- `POST /api/auth/request-reset`
+- `POST /api/auth/reset-password`
+
+### 3.2 `rbac` module
+
+責任：
+
+- role 定義
+- permission 定義
+- scope 控制
+- route guard
+- resource guard
+
+核心概念：
+
+- `role`
+  管理 admin / manager / consultant / teacher / staff / student。
+- `permission`
+  管理可執行動作，例如 `read_leads`、`edit_courses`、`manage_payments`。
+- `scope`
+  控制資料可見範圍，例如 `self`、`assigned`、`branch`、`all`。
+
+### 3.3 `public-site` module
+
+責任：
+
+- 首頁資料
+- 公開課程列表
+- 課程詳情
+- 試聽預約
+- 正式報名
+- 職缺列表
+- AI 課程推薦入口
+
+### 3.4 `leads` module
+
+責任：
+
+- 名單 CRUD
+- 跟進紀錄
+- 名單分派
+- 狀態流轉
+- 試聽預約整合
+
+### 3.5 `students` module
+
+責任：
+
+- 學員檔案
+- 學員與報名的關聯
+- 學習概況
+- 付款與課程資料彙整視圖
+
+### 3.6 `courses` module
+
+責任：
+
+- 課程 CRUD
+- 課綱章節
+- 公開狀態
+- 課程推薦資料
+
+### 3.7 `classes` module
+
+責任：
+
+- 班級 CRUD
+- 教師配置
+- 報名名額控管
+- 班級狀態
+- `class_sessions` 生成與維護
+
+### 3.8 `enrollments` module
+
+責任：
+
+- 報名流程
+- 學員與班級關聯
+- 報名狀態更新
+- 優惠碼 / 金額
+
+### 3.9 `payments` module
+
+責任：
+
+- 訂單建立
+- 金流付款狀態
+- webhook 驗證
+- 退款
+
+### 3.10 `notifications` module
+
+責任：
+
+- Email / LINE / in-app 通知
+- 模板管理
+- 發送狀態
+- 重試與失敗紀錄
+
+### 3.11 `ai-assistant` module
+
+責任：
+
+- 招生話術草稿
+- 課程推薦
+- 教務摘要
+- 主管摘要
+- 招聘摘要
+
+MVP 原則：
+
+- AI 只提供建議，不直接改核心資料。
+- 所有 AI 呼叫都要寫 `ai_logs`。
+
+### 3.12 `staff` module
+
+責任：
+
+- 員工檔案
+- 教師檔案
+- 主管關係
+- KPI 與排班資料
+
+### 3.13 `recruiting` module
+
+責任：
+
+- 職缺
+- 應徵者
+- 面試流程
+- 錄取結果
+
+### 3.14 `analytics` module
+
+責任：
+
+- 管理 dashboard
+- 招生漏斗
+- 報名轉換率
+- 課程滿班率
+- 基礎營收指標
+
+### 3.15 `audit` module
+
+責任：
+
+- 操作記錄
+- AI 記錄
+- 付款與 webhook 記錄
+- 權限變更記錄
+
+---
+
+## 4. API Design Rules
+
+### 4.1 API 分層
+
+每個 domain 固定分成 4 類：
+
+- `list`
+- `detail`
+- `create/update`
+- `actions`
+
+例子：
+
+- `GET /api/leads`
+- `GET /api/leads/:id`
+- `POST /api/leads`
+- `POST /api/leads/:id/assign`
+
+### 4.2 回傳格式
+
+建議統一：
+
+```json
+{
+  "data": {},
+  "meta": {},
+  "error": null
+}
+```
+
+列表回傳可加：
+
+- `page`
+- `pageSize`
+- `total`
+- `sort`
+- `filters`
+
+### 4.3 錯誤格式
+
+統一使用：
+
+- `code`
+- `message`
+- `details`
+- `requestId`
+
+這樣 webhook、worker 與 API log 可以共用錯誤字典。
+
+---
+
+## 5. Auth and RBAC
+
+### 5.1 登入方式
+
+MVP 先支援：
+
+- email + password
+- session cookie 或 short-lived JWT
+- refresh token
+
+第二階段再加：
+
+- email OTP
+- Google login
+- LINE login
+
+### 5.2 角色建議
+
+- `super_admin`
+- `manager`
+- `consultant`
+- `teacher`
+- `staff`
+- `student`
+
+### 5.3 權限原則
+
+建議先定義以下 permission groups：
+
+- `read_public`
+- `manage_leads`
+- `manage_courses`
+- `manage_classes`
+- `manage_enrollments`
+- `manage_payments`
+- `manage_staff`
+- `manage_recruiting`
+- `view_reports`
+- `run_ai_assistant`
+
+### 5.4 Scope 規則
+
+scope 是 MVP 很重要的安全層：
+
+- `self`
+  只能看自己資料。
+- `assigned`
+  只能看指派給自己的名單或班級。
+- `branch`
+  只能看所屬校區資料。
+- `all`
+  全站可見。
+
+### 5.5 需要寫入 audit 的動作
+
+- 登入失敗多次
+- 權限變更
+- 名單狀態流轉
+- 顧問分派
+- 金流狀態變更
+- 退款
+- AI 建議採用或拒絕
+
+---
+
+## 6. Queue Jobs
+
+### 6.1 任務分類
+
+#### 即時任務
+
+- 登入
+- 公開查詢
+- 報名送出
+- webhook 接收
+
+#### 非同步任務
+
+- 通知發送
+- AI 草稿生成
+- 報表彙總
+- 跟進提醒
+- 付款同步
+
+#### 排程任務
+
+- 每日跟進提醒
+- 每日未付款提醒
+- 每週 KPI 摘要
+- 每日 dashboard 數據刷新
+
+### 6.2 必做 jobs
+
+#### `send-trial-booking-confirmation`
+
+觸發：
+
+- 新試聽預約建立後
+
+動作：
+
+- 寄 Email
+- 發 LINE 通知
+- 建立站內通知
+
+#### `send-enrollment-confirmation`
+
+觸發：
+
+- 報名建立後
+
+動作：
+
+- 寄送報名成功通知
+- 建立學員帳號通知
+
+#### `sync-payment-status`
+
+觸發：
+
+- 金流 webhook
+
+動作：
+
+- 更新 payment
+- 更新 enrollment
+- 觸發通知
+
+#### `generate-followup-draft`
+
+觸發：
+
+- 顧問手動點擊 AI 建議
+
+動作：
+
+- 呼叫 LLM
+- 寫入 `ai_logs`
+- 回傳話術草稿
+
+#### `daily-followup-reminder`
+
+觸發：
+
+- 每日排程
+
+動作：
+
+- 列出今日待跟進 leads
+- 通知對應顧問
+
+#### `daily-dashboard-refresh`
+
+觸發：
+
+- 每日固定時間
+
+動作：
+
+- 更新基本營運指標
+- 預熱 dashboard cache
+
+### 6.3 Job 規則
+
+- job 必須可重試
+- job 必須冪等
+- job 失敗要進死信或 error table
+- job payload 需保留 requestId / actorId / source
+
+---
+
+## 7. Webhook Flows
+
+### 7.1 金流 webhook
+
+主要用途：
+
+- 付款成功
+- 付款失敗
+- 退款成功
+
+設計要求：
+
+- 驗簽
+- 去重
+- 支援重送
+- 回應要快，不在 webhook request 內做重工作
+
+處理流程：
+
+1. 接收 webhook。
+2. 驗證來源與簽章。
+3. 查找 `order_no` 或外部 transaction id。
+4. 寫入 webhook log。
+5. 更新 `payments`。
+6. 視狀態更新 `enrollments`。
+7. 觸發通知 job。
+
+### 7.2 LINE webhook
+
+主要用途：
+
+- 使用者訊息進站
+- AI 客服前置收名單
+- 已綁定聯絡方式更新
+
+處理流程：
+
+1. 接收 LINE event。
+2. 驗證來源。
+3. 判斷是否為已知 lead / student。
+4. 建立訊息紀錄。
+5. 若符合規則，觸發 AI 回答或轉人工。
+
+### 7.3 Email / notification callback
+
+若供應商有回調：
+
+- delivery
+- bounce
+- failure
+
+需要把狀態寫回 `notifications`，方便後台查看。
+
+### 7.4 AI 外部回呼
+
+MVP 原則上不需要外部 AI callback，但若使用第三方代理服務，需保留：
+
+- request payload
+- model name
+- response payload
+- usage cost
+
+---
+
+## 8. Runtime and Deployment
+
+### 8.1 Process topology
+
+建議最少部署 2 個進程：
+
+- `api`
+- `worker`
+
+如果平台需要排程分離，可再加：
+
+- `scheduler`
+
+### 8.2 Environment Variables
+
+必備：
+
+- `DATABASE_URL`
+- `REDIS_URL`
+- `JWT_SECRET`
+- `APP_BASE_URL`
+- `SUPPORT_EMAIL`
+
+金流：
+
+- `PAYMENT_PROVIDER_KEY`
+- `PAYMENT_WEBHOOK_SECRET`
+
+通知：
+
+- `EMAIL_PROVIDER_KEY`
+- `LINE_CHANNEL_ACCESS_TOKEN`
+- `LINE_CHANNEL_SECRET`
+
+AI：
+
+- `OPENAI_API_KEY`
+
+觀測：
+
+- `SENTRY_DSN`
+- `LOG_LEVEL`
+
+### 8.3 Observability
+
+MVP 至少要有：
+
+- request id
+- structured logs
+- job logs
+- webhook logs
+- AI logs
+- payment logs
+
+建議把以下事件都記錄：
+
+- `auth.login_failed`
+- `lead.assigned`
+- `trial_booking.created`
+- `enrollment.created`
+- `payment.webhook_received`
+- `payment.paid`
+- `ai.followup_generated`
+
+### 8.4 Error handling
+
+後端不要把錯誤直接吐給前端原文。建議：
+
+- 內部錯誤保留完整 stack trace
+- 對外回傳友善訊息與 error code
+- webhook 和 job 失敗要可重試
+
+### 8.5 Performance considerations
+
+MVP 預先做的性能控制：
+
+- dashboard aggregation 用 cache
+- 列表查詢預設分頁
+- 搜尋欄位加 index
+- webhook 快取驗簽結果只做短時間
+- AI 呼叫走 async
+
+---
+
+## 9. Data Ownership Rules
+
+### 9.1 單一資料來源
+
+每個模組有自己的寫入責任：
+
+- `leads` 只能由 leads / public-site / ai-assistant 的授權動作寫入
+- `payments` 只能由 payments / webhook 寫入
+- `classes` 只能由 admin / staff 寫入
+- `students` 只能由 enrollment 成功流程或手動補建流程寫入
+
+### 9.2 不直接跨模組寫表
+
+例如：
+
+- `payments` 成功後，不要在 controller 直接同步改 5 張表。
+- 改採 service + domain event + job。
+
+這樣比較容易維護，也更方便之後拆服務。
+
+---
+
+## 10. MVP Delivery Order
+
+### Sprint 1
+
+- auth
+- RBAC
+- public courses
+- trial bookings
+- leads CRUD
+- basic notifications
+
+### Sprint 2
+
+- courses / classes
+- enrollments
+- payments
+- webhook handling
+- dashboard basics
+
+### Sprint 3
+
+- AI assistant
+- staff management
+- analytics
+- audit logs
+- recruiting foundation
+
+---
+
+## 11. Implementation Notes
+
+1. 第一版請以「可追蹤、可重試、可審計」為優先，不要追求功能炫技。
+2. AI 功能先做輔助，不做強制自動化決策。
+3. webhook 與 job 都要 idempotent，避免重送造成重複入帳或重複通知。
+4. 若要支援多校區，從第一版就把 `branch_id` 留在主要表的模型規格中。
+5. 後端 API 需和前台文案解耦，避免之後改名就要重改程式碼。
+
+---
+
+## 12. Recommended first build package
+
+如果只允許先做一個最小可上線的 backend package，順序是：
+
+1. `auth` + `rbac`
+2. `courses` + `classes`
+3. `leads` + `trial_bookings`
+4. `enrollments` + `payments`
+5. `notifications`
+6. `analytics`
+7. `ai-assistant`
+
+
+
+FILE: docs/japanese-school-platform/08-delivery-plan.md
+-------------------------------------------------------
+# Delivery Plan
+
+這份文件的目的，是把 AI 日語補習班營運平台從產品藍圖轉成可執行的團隊作戰方式。這裡不再討論「要不要做」，而是直接定義「誰負責什麼、先做什麼、怎麼協作、怎麼控風險」。
+
+## 1. Team Structure
+
+### Lead Agent
+
+- 你是總協調與最終決策者。
+- 你只看結果、里程碑、風險與例外，不處理日常碎片決策。
+- 你負責確認每個 sprint 的輸入與輸出是否對齊產品目標。
+
+### Product / PM
+
+- 負責需求切片、驗收標準、優先序與 scope 控制。
+- 把 `04-roadmap-and-prd.md` 與 `05-mvp-backlog.md` 轉成 sprint backlog。
+- 維護 issue 優先順序與變更紀錄。
+
+### Design
+
+- 負責首頁、課程頁、報名頁、後台三大頁面群的資訊層級與互動流程。
+- 先做低保真 wireframe，再補視覺系統與元件規格。
+- 優先處理招生轉換路徑與後台高密度表格的可讀性。
+
+### Frontend Engineering
+
+- 負責公開站、學員中心、員工工作台、管理後台的頁面實作。
+- 負責表單流程、權限導頁、列表詳情頁、狀態切換 UI。
+- 與 design 對齊元件可重用性與響應式行為。
+
+### Backend Engineering
+
+- 負責 auth / RBAC、CRM、課程班級、報名付款、通知、AI helper API。
+- 負責 queue jobs、webhook、audit log、dashboard aggregation。
+- 確保資料模型與流程狀態一致。
+
+### QA / Ops
+
+- 負責驗收腳本、測試資料、關鍵流程回歸。
+- 先驗證「收名單、試聽、報名、付款、通知」四條主線。
+- 追蹤上線後的錯誤與流程漏接。
+
+---
+
+## 2. Role Allocation
+
+### 我方分工原則
+
+1. PM 只負責定義和驗收，不負責臨場救火。
+2. Design 只要先鎖住轉換路徑與操作密度，不必一次畫完整站。
+3. Frontend 先把流程跑通，再補視覺細節。
+4. Backend 先保證資料與事件正確，再做優化與 AI。
+5. QA 先盯住關鍵金流與狀態流，不平均用力。
+
+### 建議人力配置
+
+- 1 位 PM
+- 1 位 Designer
+- 2 位 Frontend
+- 2 位 Backend
+- 1 位 QA / Ops
+
+如果人力不足，優先保留：
+
+1. 1 PM
+2. 1 Designer
+3. 1 Frontend
+4. 1 Backend
+5. 0.5 QA by PM / backend support
+
+---
+
+## 3. Execution Phases
+
+### Phase 0: Setup
+
+目標：
+
+- 先把產品範圍鎖在 MVP。
+- 先把資料模型、API domain、頁面清單固定。
+
+輸出：
+
+- `03-data-model.md`
+- `04-roadmap-and-prd.md`
+- `05-mvp-backlog.md`
+
+### Phase 1: Revenue Capture
+
+目標：
+
+- 先讓網站能接名單、能預約試聽、能送出報名。
+
+重點：
+
+- 公開站首頁與課程頁
+- 試聽預約
+- 報名流程
+- leads CRUD
+- basic notifications
+
+### Phase 2: Operations Control
+
+目標：
+
+- 讓招生顧問與行政真的在後台工作。
+
+重點：
+
+- 顧問分派
+- 名單跟進紀錄
+- 班級管理
+- 付款追蹤
+- dashboard
+
+### Phase 3: Teaching Support
+
+目標：
+
+- 把教務帶進平台，降低人工整理成本。
+
+重點：
+
+- 學員中心
+- 出缺勤
+- 作業與測驗
+- 教師工作台
+- AI 教案草稿
+
+### Phase 4: Management Intelligence
+
+目標：
+
+- 讓主管看數字、看風險、看預測。
+
+重點：
+
+- KPI
+- 招生漏斗
+- 招聘
+- AI 週報 / 月報
+- 風險預警
+
+---
+
+## 4. Sprint Ceremonies
+
+### Weekly Cadence
+
+- Monday: sprint planning
+- Wednesday: mid-sprint check
+- Friday: demo and bug triage
+- Daily: short async check-in
+
+### Sprint Planning Inputs
+
+- 上一個 sprint 的完成率
+- 產品優先序
+- 風險與阻塞項
+- 設計與 API 依賴
+
+### Demo Rules
+
+- 只展示可跑通的端到端流程。
+- 不接受只完成 UI、沒有資料閉環的項目。
+- 每次 demo 都要包含可驗證的資料狀態變化。
+
+### Retro Rules
+
+- 只討論阻礙交付的流程問題。
+- 追蹤依賴是否太晚曝光。
+- 追蹤是否有 scope creep。
+
+---
+
+## 5. Dependency Sequencing
+
+### Dependency Order
+
+1. 產品邊界與 MVP scope
+2. 資料模型
+3. Auth / RBAC
+4. 公開站內容與課程資料
+5. Leads / trial booking
+6. Enrollments / payments
+7. Admin dashboard
+8. Staff / teaching workflows
+9. AI helper flows
+10. Analytics / reporting
+
+### Hard Dependencies
+
+- 沒有 `users` 和 `user_permissions`，後台權限不能開始。
+- 沒有 `courses`、`classes`，前台報名與後台班級無法串起來。
+- 沒有 `leads`、`lead_logs`，招生 CRM 無法追蹤。
+- 沒有 `enrollments`、`payments`，無法完成營收閉環。
+- 沒有 `notifications`，任何提醒與確認都會斷掉。
+
+### Parallelizable Work
+
+- Design 可以先做首頁、課程頁、後台表格頁三條線。
+- Frontend 可以先做公開站與後台 shell。
+- Backend 可以先做 auth、courses、leads 三個 module。
+- QA 可以先寫報名與付款的驗收腳本。
+
+---
+
+## 6. Lead Agent Assignment Model
+
+### 我會怎麼分配工作
+
+#### 給 PM
+
+- 把 backlog 切成 sprint issue。
+- 管 scope，避免功能在 sprint 內漂移。
+- 定義每個功能的 acceptance criteria。
+
+#### 給 Design
+
+- 先做高轉換頁面與高頻後台頁。
+- 先交 wireframe，再交 component spec。
+- 先把資料密度高的表格和名單頁處理好。
+
+#### 給 Frontend
+
+- 先做可見頁面，再做帳號與權限頁。
+- 先把表單、列表、詳情、狀態標籤這四種模式統一。
+- 同步建立可重用元件，避免每頁各寫一套。
+
+#### 給 Backend
+
+- 先把 auth、leads、courses、classes、enrollments 這五組主體打通。
+- 先保證 webhook 和 queue job 的可靠性。
+- 先把 audit log 與狀態流寫正確。
+
+#### 給 QA / Ops
+
+- 先驗證報名、付款、通知三條最容易壞的鏈路。
+- 每個 sprint 都保留回歸測試案例。
+- 追蹤哪些流程需要人工備援。
+
+### 我會怎麼控節奏
+
+- 任何會影響資料結構的需求，必須先經過 PM 與 backend 對齊。
+- 任何會影響主要轉換流程的 UI 變更，必須先由 design 和 frontend 對齊。
+- 任何 AI 功能都先以「建議」形式上線，不直接寫入核心資料。
+
+---
+
+## 7. Risk Register
+
+### Risk 1: Scope Too Large
+
+- 風險：一次想做完招生、教務、員工、招聘、報表，會拖垮交付。
+- 對策：MVP 嚴格只保留招生閉環與基礎後台。
+
+### Risk 2: Data Model Drift
+
+- 風險：前後台各自長出不同的欄位與狀態。
+- 對策：先固定資料模型與狀態字典，再開始開發。
+
+### Risk 3: Payment or Notification Failure
+
+- 風險：報名成功但付款或通知漏接。
+- 對策：金流 webhook、notification job 與 retry 機制先做。
+
+### Risk 4: AI Overreach
+
+- 風險：AI 直接做決策，造成招生、教務或人事誤判。
+- 對策：AI 只產生建議與草稿，關鍵動作保留人工確認。
+
+### Risk 5: Role Confusion
+
+- 風險：顧問、行政、主管權限交疊，後台難維護。
+- 對策：RBAC + scope 從第一版開始就實作。
+
+### Risk 6: Late Design Handoff
+
+- 風險：前端等設計，或設計等產品定義，造成排程卡住。
+- 對策：先做首頁、課程頁、名單頁、後台表格頁四個高頻畫面。
+
+### Risk 7: No Operational Backup
+
+- 風險：系統化後，如果流程失敗就無人工 fallback。
+- 對策：為報名、付款、通知、試聽預約保留 manual override。
+
+---
+
+## 8. Operating Rules
+
+1. 任何需求變更都先回到 backlog，不口頭散落到各人。
+2. 任何 sprint 都只允許一個主目標。
+3. 任何功能只要沒有資料閉環，就不算完成。
+4. 任何 AI 功能沒有審計紀錄，就不准進主流程。
+5. 任何涉及金流、權限、資料刪除的操作，都要有回滾或補償方案。
+
+---
+
+## 9. First 30 Days
+
+### Week 1
+
+- 固定 MVP scope
+- 固定資料模型
+- 固定角色與權限
+- 完成 wireframe 草圖
+
+### Week 2
+
+- 建立公開站骨架
+- 建立 auth 與後台 shell
+- 建立 courses / classes / leads 基礎 API
+
+### Week 3
+
+- 串試聽預約
+- 串報名與付款
+- 完成名單列表與詳情頁
+
+### Week 4
+
+- 完成通知與 dashboard
+- 做一次端到端回歸
+- 整理下一 sprint 的風險與缺口
+
+---
+
+## 10. Done Definition
+
+### 對前台
+
+- 訪客可以看懂課程。
+- 訪客可以預約試聽。
+- 訪客可以送出報名。
+
+### 對後台
+
+- 顧問可以追蹤名單。
+- 行政可以確認報名與付款。
+- 管理者可以看轉換與營收。
+
+### 對團隊
+
+- PM 可以排下一個 sprint。
+- Design 可以進入下一批頁面。
+- Engineering 可以持續交付，不被臨時需求打亂。
+

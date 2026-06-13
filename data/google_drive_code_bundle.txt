@@ -1,0 +1,1973 @@
+AI 日語補習班營運平台 - 程式碼快照
+====================
+
+FILE: sql/japanese_school_platform_mvp.sql
+------------------------------------------
+create extension if not exists pgcrypto;
+
+create table if not exists users (
+  id uuid primary key default gen_random_uuid(),
+  name varchar(120) not null,
+  email varchar(255) not null unique,
+  phone varchar(40),
+  password_hash varchar(255) not null,
+  role varchar(40) not null,
+  status varchar(40) not null default 'active',
+  locale varchar(20) not null default 'zh-TW',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists user_permissions (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references users(id) on delete cascade,
+  permission_key varchar(120) not null,
+  scope varchar(40) not null default 'self',
+  created_at timestamptz not null default now(),
+  unique (user_id, permission_key, scope)
+);
+
+create table if not exists staff (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references users(id) on delete cascade,
+  department varchar(80) not null,
+  title varchar(120) not null,
+  manager_id uuid references staff(id) on delete set null,
+  hire_date date,
+  kpi_target jsonb not null default '{}'::jsonb,
+  status varchar(40) not null default 'active',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists teachers (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null unique references users(id) on delete cascade,
+  specialties text,
+  years_experience numeric(5,2),
+  available_slots jsonb not null default '[]'::jsonb,
+  bio text,
+  rating numeric(3,2),
+  contract_type varchar(40),
+  pay_scheme varchar(40),
+  created_at timestamptz not null default now()
+);
+
+create table if not exists courses (
+  id uuid primary key default gen_random_uuid(),
+  slug varchar(160) not null unique,
+  name varchar(200) not null,
+  course_type varchar(80) not null,
+  level varchar(40),
+  description text not null default '',
+  objectives text not null default '',
+  total_sessions integer not null default 0,
+  session_minutes integer not null default 90,
+  price numeric(12,2) not null default 0,
+  delivery_mode varchar(40) not null default 'online',
+  is_public boolean not null default true,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists course_modules (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references courses(id) on delete cascade,
+  title varchar(200) not null,
+  sort_order integer not null default 0,
+  description text not null default '',
+  material_url text
+);
+
+create table if not exists classes (
+  id uuid primary key default gen_random_uuid(),
+  course_id uuid not null references courses(id) on delete restrict,
+  name varchar(200) not null,
+  teacher_id uuid references teachers(id) on delete set null,
+  start_date date not null,
+  end_date date,
+  weekday_mask varchar(40),
+  start_time time,
+  end_time time,
+  capacity integer not null default 0,
+  enrolled_count integer not null default 0,
+  location_label varchar(160),
+  meeting_url text,
+  status varchar(40) not null default 'draft',
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists class_sessions (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references classes(id) on delete cascade,
+  module_id uuid references course_modules(id) on delete set null,
+  starts_at timestamptz not null,
+  ends_at timestamptz not null,
+  teacher_id uuid references teachers(id) on delete set null,
+  classroom varchar(160),
+  meeting_url text,
+  status varchar(40) not null default 'scheduled',
+  lesson_plan text not null default '',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists leads (
+  id uuid primary key default gen_random_uuid(),
+  name varchar(120) not null,
+  phone varchar(40),
+  email varchar(255),
+  line_id varchar(120),
+  source_channel varchar(80) not null default 'website',
+  campaign_name varchar(160),
+  interested_course_id uuid references courses(id) on delete set null,
+  budget_range varchar(80),
+  japanese_level varchar(40),
+  study_goal text,
+  departure_plan_date date,
+  intent_score numeric(5,2),
+  win_probability numeric(5,2),
+  status varchar(40) not null default 'new',
+  assigned_staff_id uuid references staff(id) on delete set null,
+  last_contact_at timestamptz,
+  next_follow_up_at timestamptz,
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists lead_logs (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references leads(id) on delete cascade,
+  staff_id uuid references staff(id) on delete set null,
+  contact_method varchar(40) not null,
+  content text not null,
+  next_action text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists trial_bookings (
+  id uuid primary key default gen_random_uuid(),
+  lead_id uuid not null references leads(id) on delete cascade,
+  course_id uuid references courses(id) on delete set null,
+  class_id uuid references classes(id) on delete set null,
+  slot_start_at timestamptz not null,
+  slot_end_at timestamptz not null,
+  status varchar(40) not null default 'booked',
+  feedback text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists students (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid unique references users(id) on delete set null,
+  chinese_name varchar(120) not null,
+  english_name varchar(120),
+  japanese_name varchar(120),
+  gender varchar(40),
+  nationality varchar(80),
+  native_language varchar(80),
+  age_group varchar(40),
+  city varchar(80),
+  japanese_level varchar(40),
+  study_goal text,
+  source_channel varchar(80),
+  consultant_id uuid references staff(id) on delete set null,
+  status varchar(40) not null default 'active',
+  notes text,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+create table if not exists enrollments (
+  id uuid primary key default gen_random_uuid(),
+  student_id uuid not null references students(id) on delete cascade,
+  class_id uuid not null references classes(id) on delete restrict,
+  lead_id uuid references leads(id) on delete set null,
+  enrolled_at timestamptz not null default now(),
+  status varchar(40) not null default 'pending',
+  payment_status varchar(40) not null default 'unpaid',
+  coupon_code varchar(80),
+  list_price numeric(12,2) not null default 0,
+  paid_amount numeric(12,2) not null default 0,
+  consultant_id uuid references staff(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists payments (
+  id uuid primary key default gen_random_uuid(),
+  enrollment_id uuid not null references enrollments(id) on delete cascade,
+  order_no varchar(120) not null unique,
+  amount numeric(12,2) not null default 0,
+  payment_method varchar(40) not null,
+  status varchar(40) not null default 'pending',
+  paid_at timestamptz,
+  invoice_data jsonb not null default '{}'::jsonb,
+  gateway_payload jsonb not null default '{}'::jsonb,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists attendance (
+  id uuid primary key default gen_random_uuid(),
+  class_session_id uuid not null references class_sessions(id) on delete cascade,
+  student_id uuid not null references students(id) on delete cascade,
+  status varchar(40) not null,
+  notes text,
+  created_at timestamptz not null default now(),
+  unique (class_session_id, student_id)
+);
+
+create table if not exists assignments (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references classes(id) on delete cascade,
+  class_session_id uuid references class_sessions(id) on delete set null,
+  title varchar(200) not null,
+  content text not null,
+  due_at timestamptz,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists assignment_submissions (
+  id uuid primary key default gen_random_uuid(),
+  assignment_id uuid not null references assignments(id) on delete cascade,
+  student_id uuid not null references students(id) on delete cascade,
+  content text not null,
+  score numeric(6,2),
+  feedback text,
+  submitted_at timestamptz,
+  created_at timestamptz not null default now(),
+  unique (assignment_id, student_id)
+);
+
+create table if not exists exams (
+  id uuid primary key default gen_random_uuid(),
+  class_id uuid not null references classes(id) on delete cascade,
+  title varchar(200) not null,
+  exam_type varchar(40) not null,
+  total_score numeric(6,2) not null default 100,
+  created_by uuid references users(id) on delete set null,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists exam_results (
+  id uuid primary key default gen_random_uuid(),
+  exam_id uuid not null references exams(id) on delete cascade,
+  student_id uuid not null references students(id) on delete cascade,
+  score numeric(6,2),
+  result_level varchar(40),
+  feedback text,
+  created_at timestamptz not null default now(),
+  unique (exam_id, student_id)
+);
+
+create table if not exists job_positions (
+  id uuid primary key default gen_random_uuid(),
+  title varchar(160) not null,
+  department varchar(80) not null,
+  description text not null,
+  requirements text not null,
+  salary_range varchar(120),
+  location varchar(120),
+  status varchar(40) not null default 'draft',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists applicants (
+  id uuid primary key default gen_random_uuid(),
+  position_id uuid not null references job_positions(id) on delete cascade,
+  name varchar(120) not null,
+  email varchar(255),
+  phone varchar(40),
+  resume_url text,
+  interview_status varchar(40) not null default 'new',
+  ai_match_score numeric(5,2),
+  notes text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists interviews (
+  id uuid primary key default gen_random_uuid(),
+  applicant_id uuid not null references applicants(id) on delete cascade,
+  interview_at timestamptz not null,
+  interviewer_id uuid references staff(id) on delete set null,
+  rating numeric(5,2),
+  summary text,
+  recommendation varchar(40),
+  result varchar(40) not null default 'pending',
+  created_at timestamptz not null default now()
+);
+
+create table if not exists notifications (
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid references users(id) on delete cascade,
+  channel varchar(40) not null,
+  type varchar(80) not null,
+  title varchar(200) not null,
+  content text not null,
+  status varchar(40) not null default 'queued',
+  sent_at timestamptz,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists ai_logs (
+  id uuid primary key default gen_random_uuid(),
+  module_name varchar(80) not null,
+  user_id uuid references users(id) on delete set null,
+  action_name varchar(120) not null,
+  input_summary text,
+  output_summary text,
+  model_name varchar(80),
+  status varchar(40) not null default 'success',
+  created_at timestamptz not null default now()
+);
+
+create index if not exists idx_users_role on users(role);
+create index if not exists idx_users_status on users(status);
+create index if not exists idx_staff_department on staff(department);
+create index if not exists idx_courses_public on courses(is_public);
+create index if not exists idx_classes_course_id on classes(course_id);
+create index if not exists idx_classes_status on classes(status);
+create index if not exists idx_class_sessions_class_id on class_sessions(class_id);
+create index if not exists idx_class_sessions_start on class_sessions(starts_at);
+create index if not exists idx_leads_status on leads(status);
+create index if not exists idx_leads_assigned_staff_id on leads(assigned_staff_id);
+create index if not exists idx_leads_source_channel on leads(source_channel);
+create index if not exists idx_leads_next_follow_up_at on leads(next_follow_up_at);
+create index if not exists idx_lead_logs_lead_id on lead_logs(lead_id);
+create index if not exists idx_trial_bookings_lead_id on trial_bookings(lead_id);
+create index if not exists idx_trial_bookings_slot_start_at on trial_bookings(slot_start_at);
+create index if not exists idx_students_consultant_id on students(consultant_id);
+create index if not exists idx_enrollments_student_id on enrollments(student_id);
+create index if not exists idx_enrollments_class_id on enrollments(class_id);
+create index if not exists idx_enrollments_payment_status on enrollments(payment_status);
+create index if not exists idx_payments_enrollment_id on payments(enrollment_id);
+create index if not exists idx_payments_status on payments(status);
+create index if not exists idx_notifications_user_id on notifications(user_id);
+create index if not exists idx_notifications_status on notifications(status);
+create index if not exists idx_ai_logs_module_name on ai_logs(module_name);
+create index if not exists idx_ai_logs_created_at on ai_logs(created_at desc);
+
+
+FILE: school_platform/auth.py
+-----------------------------
+from __future__ import annotations
+
+import secrets
+from dataclasses import dataclass
+from uuid import UUID
+
+from fastapi import Depends, HTTPException, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+
+from school_platform.schemas import AuthSessionResponse, AuthUserResponse, UserAccount
+from school_platform.store import store
+
+security = HTTPBearer(auto_error=False)
+
+
+@dataclass
+class SessionRecord:
+    token: str
+    user_id: UUID
+
+
+class AuthService:
+    def __init__(self) -> None:
+        self.sessions: dict[str, SessionRecord] = {}
+
+    def authenticate(self, email: str, password: str) -> AuthSessionResponse:
+        user = store.get_user_by_email(email)
+        if user is None or user.password_hash != store.hash_password(password):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+        if user.status != "active":
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="User is inactive")
+
+        token = secrets.token_urlsafe(32)
+        self.sessions[token] = SessionRecord(token=token, user_id=user.id)
+        return AuthSessionResponse(access_token=token, user=self._to_user_response(user))
+
+    def logout(self, token: str) -> None:
+        self.sessions.pop(token, None)
+
+    def current_user(self, token: str | None) -> UserAccount:
+        if not token or token not in self.sessions:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+        session = self.sessions[token]
+        user = store.get_user_by_id(session.user_id)
+        if user is None:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Session user not found")
+        return user
+
+    def _to_user_response(self, user: UserAccount) -> AuthUserResponse:
+        return AuthUserResponse(
+            id=user.id,
+            email=user.email,
+            name=user.name,
+            role=user.role,
+            permissions=user.permissions,
+            staff_id=user.staff_id,
+        )
+
+
+auth_service = AuthService()
+
+
+def get_current_user(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> UserAccount:
+    token = credentials.credentials if credentials else None
+    return auth_service.current_user(token)
+
+
+def require_roles(*roles: str):
+    def dependency(user: UserAccount = Depends(get_current_user)) -> UserAccount:
+        if "*" in user.permissions:
+            return user
+        if roles and user.role not in roles:
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Insufficient role")
+        return user
+
+    return dependency
+
+
+def current_token(credentials: HTTPAuthorizationCredentials | None = Depends(security)) -> str:
+    if credentials is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Authentication required")
+    return credentials.credentials
+
+
+FILE: school_platform/router.py
+-------------------------------
+from __future__ import annotations
+
+from html import escape
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi.responses import HTMLResponse
+from pydantic import BaseModel
+
+from school_platform.auth import auth_service, current_token, get_current_user, require_roles
+from school_platform.schemas import (
+    AuthLoginRequest,
+    ClassUpsertRequest,
+    CourseUpsertRequest,
+    EnrollmentCreate,
+    LeadAssignmentRequest,
+    LeadStatusChangeRequest,
+    PaymentIntentCreate,
+    PaymentWebhookPayload,
+    TrialBookingCreate,
+)
+from school_platform.store import store
+
+router = APIRouter(prefix="/school-platform", tags=["school-platform"])
+api_router = APIRouter(prefix="/api")
+
+
+class LeadLogCreate(BaseModel):
+    staff_name: str
+    contact_method: str
+    content: str
+    next_action: str | None = None
+
+
+@router.get("", response_class=HTMLResponse)
+def school_platform_home() -> str:
+    home = store.home_payload()
+    cards = "".join(
+        "<article class='card'>"
+        f"<div class='eyebrow'>{escape(course.course_type)} / {escape(course.level)}</div>"
+        f"<h3>{escape(course.name)}</h3>"
+        f"<p>{escape(course.short_description)}</p>"
+        f"<div class='price'>NT$ {course.price:,.0f}</div>"
+        "</article>"
+        for course in home.featured_courses
+    )
+    return f"""
+    <!doctype html>
+    <html lang="zh-Hant">
+      <head>
+        <meta charset="utf-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        <title>AI 日語補習班營運平台 MVP</title>
+        <style>
+          :root {{
+            --bg: #f3efe7;
+            --paper: #fffdf8;
+            --ink: #17211d;
+            --muted: #5d6b64;
+            --line: #d8d1c4;
+            --accent: #b54d2f;
+            --accent-2: #214f43;
+          }}
+          * {{ box-sizing: border-box; }}
+          body {{ margin: 0; font-family: ui-sans-serif, system-ui, sans-serif; background:
+            radial-gradient(circle at top left, rgba(181,77,47,.08), transparent 25%),
+            linear-gradient(180deg, #f8f4ec, var(--bg)); color: var(--ink); }}
+          .wrap {{ max-width: 1120px; margin: 0 auto; padding: 28px 20px 64px; }}
+          .hero {{ background: var(--paper); border: 1px solid var(--line); border-radius: 28px; padding: 28px; box-shadow: 0 16px 50px rgba(0,0,0,.06); }}
+          .eyebrow {{ font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); font-weight: 700; }}
+          h1 {{ margin: 10px 0 10px; font-size: 42px; line-height: 1.05; }}
+          p {{ color: var(--muted); line-height: 1.7; }}
+          .actions {{ display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }}
+          .btn {{ text-decoration: none; padding: 12px 16px; border-radius: 999px; background: var(--accent); color: #fff; font-weight: 700; }}
+          .btn.alt {{ background: var(--accent-2); }}
+          .grid {{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 22px; }}
+          .card {{ background: #fff; border: 1px solid var(--line); border-radius: 20px; padding: 18px; }}
+          .card h3 {{ margin: 8px 0; }}
+          .price {{ margin-top: 12px; font-weight: 700; }}
+          code {{ background: #f1ebe0; padding: 2px 6px; border-radius: 8px; }}
+          @media (max-width: 820px) {{ .grid {{ grid-template-columns: 1fr; }} h1 {{ font-size: 32px; }} }}
+        </style>
+      </head>
+      <body>
+        <div class="wrap">
+          <section class="hero">
+            <div class="eyebrow">{escape(home.brand_name)}</div>
+            <h1>{escape(home.hero_title)}</h1>
+            <p>{escape(home.hero_subtitle)}</p>
+            <p>目前已提供可跑的 MVP API 骨架：前台課程、試聽預約、報名建單、招生 CRM、AI 跟進草稿與管理 dashboard。</p>
+            <div class="actions">
+              <a class="btn" href="/school-platform/api/public/courses">公開課程 API</a>
+              <a class="btn alt" href="/school-platform/api/admin/dashboard">管理儀表板 API</a>
+            </div>
+          </section>
+          <section class="grid">{cards}</section>
+          <section class="hero" style="margin-top:18px;">
+            <div class="eyebrow">API Base</div>
+            <p><code>/school-platform/api</code></p>
+          </section>
+        </div>
+      </body>
+    </html>
+    """
+
+
+@api_router.get("/health")
+def school_platform_health() -> dict[str, str]:
+    return {"status": "ok", "mode": "mvp", "storage": "json-file"}
+
+
+@api_router.post("/auth/login")
+def auth_login(payload: AuthLoginRequest) -> dict[str, object]:
+    return {"data": auth_service.authenticate(payload.email, payload.password).model_dump(mode="json"), "error": None}
+
+
+@api_router.post("/auth/logout")
+def auth_logout(token: str = Depends(current_token)) -> dict[str, object]:
+    auth_service.logout(token)
+    return {"data": {"success": True}, "error": None}
+
+
+@api_router.get("/auth/me")
+def auth_me(user=Depends(get_current_user)) -> dict[str, object]:
+    return {
+        "data": {
+            "id": str(user.id),
+            "email": user.email,
+            "name": user.name,
+            "role": user.role,
+            "permissions": user.permissions,
+            "staff_id": str(user.staff_id) if user.staff_id else None,
+        },
+        "error": None,
+    }
+
+
+@api_router.get("/public/home")
+def public_home() -> dict[str, object]:
+    return {"data": store.home_payload().model_dump(mode="json"), "error": None}
+
+
+@api_router.get("/public/courses")
+def public_courses() -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_courses()], "error": None}
+
+
+@api_router.get("/public/courses/{slug}")
+def public_course_detail(slug: str) -> dict[str, object]:
+    try:
+        return {"data": store.get_course(slug).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail=f"Course not found: {slug}") from exc
+
+
+@api_router.get("/public/courses/{slug}/classes")
+def public_course_classes(slug: str) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.classes_for_course(slug)], "error": None}
+
+
+@api_router.get("/public/trial-slots")
+def public_trial_slots(course_slug: str | None = Query(default=None)) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.trial_slots(course_slug)], "error": None}
+
+
+@api_router.post("/public/trial-bookings")
+def public_trial_booking(payload: TrialBookingCreate) -> dict[str, object]:
+    return {"data": store.create_trial_booking(payload).model_dump(mode="json"), "error": None}
+
+
+@api_router.get("/public/classes/open")
+def public_open_classes() -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.open_classes()], "error": None}
+
+
+@api_router.post("/public/enrollments")
+def public_create_enrollment(payload: EnrollmentCreate) -> dict[str, object]:
+    try:
+        return {"data": store.create_enrollment(payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Class not found") from exc
+
+
+@api_router.post("/public/payments/create-intent")
+def public_create_payment_intent(payload: PaymentIntentCreate) -> dict[str, object]:
+    try:
+        return {"data": store.create_payment_intent(payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Enrollment not found") from exc
+
+
+@api_router.get("/admin/dashboard")
+def admin_dashboard(user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    return {"data": store.dashboard_metrics().model_dump(mode="json"), "error": None}
+
+
+@api_router.get("/leads")
+def list_leads(status: str | None = Query(default=None), user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_leads(status)], "error": None}
+
+
+@api_router.get("/leads/{lead_id}")
+def lead_detail(lead_id: UUID, user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    try:
+        return {"data": store.get_lead(lead_id).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Lead not found") from exc
+
+
+@api_router.get("/leads/{lead_id}/logs")
+def lead_logs(lead_id: UUID, user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.logs_for_lead(lead_id)], "error": None}
+
+
+@api_router.post("/leads/{lead_id}/logs")
+def create_lead_log(lead_id: UUID, payload: LeadLogCreate, user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    try:
+        store.get_lead(lead_id)
+        log = store.add_lead_log(
+            lead_id=lead_id,
+            staff_name=payload.staff_name,
+            contact_method=payload.contact_method,
+            content=payload.content,
+            next_action=payload.next_action,
+        )
+        return {"data": log.model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Lead not found") from exc
+
+
+@api_router.post("/leads/{lead_id}/assign")
+def assign_lead(lead_id: UUID, payload: LeadAssignmentRequest, user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    try:
+        return {"data": store.assign_lead(lead_id, payload.staff_id).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Lead or staff not found") from exc
+
+
+@api_router.post("/leads/{lead_id}/change-status")
+def change_lead_status(lead_id: UUID, payload: LeadStatusChangeRequest, user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    try:
+        return {"data": store.change_lead_status(lead_id, payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Lead not found") from exc
+
+
+@api_router.get("/courses")
+def admin_courses(user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_courses()], "error": None}
+
+
+@api_router.post("/courses")
+def create_course(payload: CourseUpsertRequest, user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    return {"data": store.create_course(payload).model_dump(mode="json"), "error": None}
+
+
+@api_router.patch("/courses/{slug}")
+def update_course(slug: str, payload: CourseUpsertRequest, user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    try:
+        return {"data": store.update_course(slug, payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Course not found") from exc
+
+
+@api_router.get("/classes")
+def admin_classes(user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.open_classes()], "error": None}
+
+
+@api_router.post("/classes")
+def create_class(payload: ClassUpsertRequest, user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    try:
+        return {"data": store.create_class(payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Course not found") from exc
+
+
+@api_router.patch("/classes/{class_id}")
+def update_class(class_id: UUID, payload: ClassUpsertRequest, user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    try:
+        return {"data": store.update_class(class_id, payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Class or course not found") from exc
+
+
+@api_router.get("/enrollments")
+def admin_enrollments(user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_enrollments()], "error": None}
+
+
+@api_router.get("/payments")
+def admin_payments(user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_payments()], "error": None}
+
+
+@api_router.post("/payments/webhook")
+def payments_webhook(payload: PaymentWebhookPayload) -> dict[str, object]:
+    try:
+        return {"data": store.apply_payment_webhook(payload).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Payment not found") from exc
+
+
+@api_router.get("/staff")
+def admin_staff(user=Depends(require_roles("super_admin", "manager"))) -> dict[str, object]:
+    return {"data": [item.model_dump(mode="json") for item in store.list_staff()], "error": None}
+
+
+@api_router.post("/ai/leads/{lead_id}/followup-draft")
+def ai_followup_draft(lead_id: UUID, user=Depends(require_roles("super_admin", "manager", "consultant"))) -> dict[str, object]:
+    try:
+        return {"data": store.followup_draft(lead_id).model_dump(mode="json"), "error": None}
+    except KeyError as exc:
+        raise HTTPException(status_code=404, detail="Lead not found") from exc
+
+
+router.include_router(api_router)
+
+
+FILE: school_platform/store.py
+------------------------------
+from __future__ import annotations
+
+from datetime import date, datetime, time, timedelta
+import hashlib
+from uuid import UUID, uuid4
+
+from school_platform.repository import JsonRepository
+from school_platform.schemas import (
+    ClassSummary,
+    ClassUpsertRequest,
+    CourseDetail,
+    CourseSummary,
+    CourseUpsertRequest,
+    DashboardMetrics,
+    EnrollmentCreate,
+    EnrollmentRecord,
+    EnrollmentResponse,
+    FollowupDraftResponse,
+    HomePayload,
+    Lead,
+    LeadLog,
+    LeadStatusChangeRequest,
+    PaymentIntentCreate,
+    PaymentIntentResponse,
+    PaymentRecord,
+    PaymentWebhookPayload,
+    StaffRecord,
+    StudentRecord,
+    TrialBookingCreate,
+    TrialBookingResponse,
+    TrialSlot,
+    UserAccount,
+)
+
+
+def _now() -> datetime:
+    return datetime.now().astimezone()
+
+
+class SchoolPlatformStore:
+    def __init__(self) -> None:
+        self.repository = JsonRepository("data/school_platform_store.json")
+        self.staff: list[StaffRecord] = self._seed_staff()
+        self.users: list[UserAccount] = self._seed_users()
+        self.courses: list[CourseDetail] = self._seed_courses()
+        self.classes: list[ClassSummary] = self._seed_classes()
+        self.leads: list[Lead] = self._seed_leads()
+        self.lead_logs: list[LeadLog] = self._seed_lead_logs()
+        self.students: list[StudentRecord] = []
+        self.enrollments: list[EnrollmentRecord] = []
+        self.payments: list[PaymentRecord] = []
+        self._load_or_seed()
+
+    def _seed_staff(self) -> list[StaffRecord]:
+        return [
+            StaffRecord(id=uuid4(), name="Mika Chen", role="consultant", department="Admissions", title="招生顧問"),
+            StaffRecord(id=uuid4(), name="Sora Lin", role="consultant", department="Admissions", title="招生顧問"),
+            StaffRecord(id=uuid4(), name="Yuki Wang", role="manager", department="Operations", title="校務主管"),
+            StaffRecord(id=uuid4(), name="Aki Mori", role="teacher", department="Teaching", title="日語講師"),
+        ]
+
+    def _seed_users(self) -> list[UserAccount]:
+        staff_by_name = {item.name: item for item in self.staff}
+        return [
+            UserAccount(
+                id=uuid4(),
+                email="admin@jls.local",
+                name="Platform Admin",
+                password_hash=self.hash_password("admin123"),
+                role="super_admin",
+                permissions=["*"],
+            ),
+            UserAccount(
+                id=uuid4(),
+                email="manager@jls.local",
+                name="Yuki Wang",
+                password_hash=self.hash_password("manager123"),
+                role="manager",
+                staff_id=staff_by_name["Yuki Wang"].id,
+                permissions=["dashboard:read", "leads:read", "leads:write", "classes:read", "payments:read", "staff:read"],
+            ),
+            UserAccount(
+                id=uuid4(),
+                email="mika@jls.local",
+                name="Mika Chen",
+                password_hash=self.hash_password("mika123"),
+                role="consultant",
+                staff_id=staff_by_name["Mika Chen"].id,
+                permissions=["leads:read", "leads:write", "dashboard:read"],
+            ),
+            UserAccount(
+                id=uuid4(),
+                email="sora@jls.local",
+                name="Sora Lin",
+                password_hash=self.hash_password("sora123"),
+                role="consultant",
+                staff_id=staff_by_name["Sora Lin"].id,
+                permissions=["leads:read", "leads:write", "dashboard:read"],
+            ),
+        ]
+
+    def _seed_courses(self) -> list[CourseDetail]:
+        return [
+            CourseDetail(
+                id=uuid4(),
+                slug="japan-life-starter",
+                name="日本生活日語 Starter",
+                course_type="生活日語",
+                level="N5-",
+                delivery_mode="hybrid",
+                price=12800,
+                short_description="給準備赴日生活的新手，先學會租屋、購物、就醫與交通溝通。",
+                objectives=["建立赴日生活生存會話", "完成基本自我介紹與求助", "理解高頻生活情境"],
+                highlights=["生活情境對話", "LINE 課後複習", "赴日前學習地圖"],
+                modules=["自我介紹與求助", "租屋與交通", "購物與餐飲", "醫療與行政"],
+                teacher_names=["Aki Mori"],
+            ),
+            CourseDetail(
+                id=uuid4(),
+                slug="japanese-job-interview",
+                name="日本工作面試日語",
+                course_type="職場日語",
+                level="N4-N3",
+                delivery_mode="online",
+                price=16800,
+                short_description="聚焦履歷、自我介紹、面試問答與職場禮貌。",
+                objectives=["完成面試自我介紹", "掌握敬語與面試禮節", "模擬常見問答"],
+                highlights=["履歷改寫", "模擬面試", "AI 回答修正"],
+                modules=["自我介紹", "志望動機", "經歷說明", "模擬問答"],
+                teacher_names=["Aki Mori"],
+            ),
+            CourseDetail(
+                id=uuid4(),
+                slug="jlpt-n5-bootcamp",
+                name="JLPT N5 Bootcamp",
+                course_type="JLPT",
+                level="N5",
+                delivery_mode="online",
+                price=9800,
+                short_description="零基礎到 N5 的密集打底班。",
+                objectives=["建立五十音與基礎文法", "完成 N5 範圍高頻題型訓練"],
+                highlights=["每週測驗", "AI 弱點分析", "考前衝刺題庫"],
+                modules=["五十音", "基礎文法", "聽力練習", "題型演練"],
+                teacher_names=["Aki Mori"],
+            ),
+        ]
+
+    def _seed_classes(self) -> list[ClassSummary]:
+        course_map = {course.slug: course for course in self.courses}
+        return [
+            ClassSummary(
+                id=uuid4(),
+                course_id=course_map["japan-life-starter"].id,
+                course_slug="japan-life-starter",
+                name="4 月晚間班",
+                teacher_name="Aki Mori",
+                start_date=date.today() + timedelta(days=10),
+                end_date=date.today() + timedelta(days=70),
+                weekday="Tue / Thu",
+                start_time=time(hour=19, minute=30),
+                end_time=time(hour=21, minute=0),
+                capacity=18,
+                enrolled_count=9,
+                location_label="Taipei + Zoom",
+                status="open",
+            ),
+            ClassSummary(
+                id=uuid4(),
+                course_id=course_map["japanese-job-interview"].id,
+                course_slug="japanese-job-interview",
+                name="5 月週末班",
+                teacher_name="Aki Mori",
+                start_date=date.today() + timedelta(days=20),
+                end_date=date.today() + timedelta(days=62),
+                weekday="Sat",
+                start_time=time(hour=10, minute=0),
+                end_time=time(hour=12, minute=0),
+                capacity=12,
+                enrolled_count=5,
+                location_label="Zoom Live",
+                status="open",
+            ),
+            ClassSummary(
+                id=uuid4(),
+                course_id=course_map["jlpt-n5-bootcamp"].id,
+                course_slug="jlpt-n5-bootcamp",
+                name="5 月衝刺班",
+                teacher_name="Aki Mori",
+                start_date=date.today() + timedelta(days=16),
+                end_date=date.today() + timedelta(days=58),
+                weekday="Mon / Wed",
+                start_time=time(hour=20, minute=0),
+                end_time=time(hour=21, minute=30),
+                capacity=20,
+                enrolled_count=14,
+                location_label="Zoom Live",
+                status="open",
+            ),
+        ]
+
+    def _seed_leads(self) -> list[Lead]:
+        now = _now()
+        return [
+            Lead(
+                id=uuid4(),
+                name="Emily Huang",
+                phone="0912000111",
+                email="emily@example.com",
+                source_channel="website",
+                interested_course_slug="japan-life-starter",
+                japanese_level="beginner",
+                study_goal="明年赴日生活，想先學會租屋與看病會話。",
+                intent_score=88,
+                win_probability=72,
+                status="trial_booked",
+                assigned_staff_name="Mika Chen",
+                last_contact_at=now - timedelta(days=1),
+                next_follow_up_at=now + timedelta(days=1),
+                created_at=now - timedelta(days=3),
+                updated_at=now - timedelta(hours=6),
+            ),
+            Lead(
+                id=uuid4(),
+                name="Kevin Wu",
+                phone="0922333444",
+                email="kevin@example.com",
+                source_channel="line",
+                interested_course_slug="japanese-job-interview",
+                japanese_level="N4",
+                study_goal="想去日本找工作，需要練面試。",
+                intent_score=76,
+                win_probability=60,
+                status="contacted",
+                assigned_staff_name="Sora Lin",
+                last_contact_at=now - timedelta(days=2),
+                next_follow_up_at=now,
+                created_at=now - timedelta(days=2),
+                updated_at=now - timedelta(hours=10),
+            ),
+        ]
+
+    def _seed_lead_logs(self) -> list[LeadLog]:
+        lead_by_name = {lead.name: lead for lead in self.leads}
+        now = _now()
+        return [
+            LeadLog(
+                id=uuid4(),
+                lead_id=lead_by_name["Emily Huang"].id,
+                staff_name="Mika Chen",
+                contact_method="line",
+                content="已回覆課程差異，學員希望先試聽晚間班。",
+                next_action="試聽前一天提醒並提供上課連結。",
+                created_at=now - timedelta(days=1),
+            ),
+            LeadLog(
+                id=uuid4(),
+                lead_id=lead_by_name["Kevin Wu"].id,
+                staff_name="Sora Lin",
+                contact_method="call",
+                content="確認學員目標是日本求職，對面試班有興趣。",
+                next_action="明天下午再次追蹤是否要預約試聽。",
+                created_at=now - timedelta(days=2),
+            ),
+        ]
+
+    def _serialize_state(self) -> dict[str, object]:
+        return {
+            "staff": [item.model_dump(mode="json") for item in self.staff],
+            "users": [item.model_dump(mode="json") for item in self.users],
+            "courses": [item.model_dump(mode="json") for item in self.courses],
+            "classes": [item.model_dump(mode="json") for item in self.classes],
+            "leads": [item.model_dump(mode="json") for item in self.leads],
+            "lead_logs": [item.model_dump(mode="json") for item in self.lead_logs],
+            "students": [item.model_dump(mode="json") for item in self.students],
+            "enrollments": [item.model_dump(mode="json") for item in self.enrollments],
+            "payments": [item.model_dump(mode="json") for item in self.payments],
+        }
+
+    def _load_or_seed(self) -> None:
+        payload = self.repository.load()
+        if not payload:
+            self._persist()
+            return
+        loaded_staff = [StaffRecord.model_validate(item) for item in payload.get("staff", [])]
+        if loaded_staff:
+            self.staff = loaded_staff
+
+        loaded_users = [UserAccount.model_validate(item) for item in payload.get("users", [])]
+        if loaded_users:
+            self.users = loaded_users
+        else:
+            self.users = self._seed_users()
+
+        loaded_courses = [CourseDetail.model_validate(item) for item in payload.get("courses", [])]
+        if loaded_courses:
+            self.courses = loaded_courses
+
+        loaded_classes = [ClassSummary.model_validate(item) for item in payload.get("classes", [])]
+        if loaded_classes:
+            self.classes = loaded_classes
+
+        self.leads = [Lead.model_validate(item) for item in payload.get("leads", [])]
+        self.lead_logs = [LeadLog.model_validate(item) for item in payload.get("lead_logs", [])]
+        self.students = [StudentRecord.model_validate(item) for item in payload.get("students", [])]
+        self.enrollments = [EnrollmentRecord.model_validate(item) for item in payload.get("enrollments", [])]
+        self.payments = [PaymentRecord.model_validate(item) for item in payload.get("payments", [])]
+        self._persist()
+
+    def _persist(self) -> None:
+        self.repository.save(self._serialize_state())
+
+    @staticmethod
+    def hash_password(password: str) -> str:
+        return hashlib.sha256(password.encode("utf-8")).hexdigest()
+
+    def home_payload(self) -> HomePayload:
+        return HomePayload(
+            brand_name="Japan Life Language School OS",
+            hero_title="AI 化日語補習班營運平台 MVP",
+            hero_subtitle="先把招生、試聽、報名、付款與後台追蹤跑起來，再往教務與 AI 升級。",
+            featured_courses=[CourseSummary(**course.model_dump()) for course in self.courses[:3]],
+            value_props=["前台自動招生", "後台名單追蹤", "可擴充成學員與教務平台"],
+        )
+
+    def list_courses(self) -> list[CourseSummary]:
+        return [CourseSummary(**course.model_dump()) for course in self.courses]
+
+    def create_course(self, payload: CourseUpsertRequest) -> CourseDetail:
+        course = CourseDetail(
+            id=uuid4(),
+            slug=payload.slug,
+            name=payload.name,
+            course_type=payload.course_type,
+            level=payload.level,
+            delivery_mode=payload.delivery_mode,
+            price=payload.price,
+            short_description=payload.short_description,
+            objectives=payload.objectives,
+            highlights=payload.highlights,
+            modules=payload.modules,
+            teacher_names=payload.teacher_names,
+        )
+        self.courses.append(course)
+        self._persist()
+        return course
+
+    def update_course(self, slug: str, payload: CourseUpsertRequest) -> CourseDetail:
+        course = self.get_course(slug)
+        updated = course.model_copy(
+            update={
+                "slug": payload.slug,
+                "name": payload.name,
+                "course_type": payload.course_type,
+                "level": payload.level,
+                "delivery_mode": payload.delivery_mode,
+                "price": payload.price,
+                "short_description": payload.short_description,
+                "objectives": payload.objectives,
+                "highlights": payload.highlights,
+                "modules": payload.modules,
+                "teacher_names": payload.teacher_names,
+            }
+        )
+        self.courses = [updated if item.id == course.id else item for item in self.courses]
+        self.classes = [
+            item.model_copy(update={"course_slug": updated.slug}) if item.course_id == updated.id else item
+            for item in self.classes
+        ]
+        self._persist()
+        return updated
+
+    def get_course(self, slug: str) -> CourseDetail:
+        for course in self.courses:
+            if course.slug == slug:
+                return course
+        raise KeyError(slug)
+
+    def classes_for_course(self, slug: str) -> list[ClassSummary]:
+        return [item for item in self.classes if item.course_slug == slug]
+
+    def open_classes(self) -> list[ClassSummary]:
+        return [item for item in self.classes if item.status == "open"]
+
+    def create_class(self, payload: ClassUpsertRequest) -> ClassSummary:
+        course = self.get_course(payload.course_slug)
+        class_item = ClassSummary(
+            id=uuid4(),
+            course_id=course.id,
+            course_slug=course.slug,
+            name=payload.name,
+            teacher_name=payload.teacher_name,
+            start_date=payload.start_date,
+            end_date=payload.end_date,
+            weekday=payload.weekday,
+            start_time=payload.start_time,
+            end_time=payload.end_time,
+            capacity=payload.capacity,
+            enrolled_count=0,
+            location_label=payload.location_label,
+            status=payload.status,
+        )
+        self.classes.append(class_item)
+        self._persist()
+        return class_item
+
+    def update_class(self, class_id: UUID, payload: ClassUpsertRequest) -> ClassSummary:
+        course = self.get_course(payload.course_slug)
+        class_item = next((item for item in self.classes if item.id == class_id), None)
+        if class_item is None:
+            raise KeyError(str(class_id))
+        updated = class_item.model_copy(
+            update={
+                "course_id": course.id,
+                "course_slug": course.slug,
+                "name": payload.name,
+                "teacher_name": payload.teacher_name,
+                "start_date": payload.start_date,
+                "end_date": payload.end_date,
+                "weekday": payload.weekday,
+                "start_time": payload.start_time,
+                "end_time": payload.end_time,
+                "capacity": payload.capacity,
+                "location_label": payload.location_label,
+                "status": payload.status,
+            }
+        )
+        self.classes = [updated if item.id == class_id else item for item in self.classes]
+        self._persist()
+        return updated
+
+    def trial_slots(self, course_slug: str | None = None) -> list[TrialSlot]:
+        classes = self.open_classes()
+        if course_slug:
+            classes = [item for item in classes if item.course_slug == course_slug]
+        slots: list[TrialSlot] = []
+        for class_item in classes:
+            start_dt = datetime.combine(class_item.start_date, class_item.start_time).astimezone()
+            slots.append(
+                TrialSlot(
+                    starts_at=start_dt,
+                    ends_at=start_dt + timedelta(minutes=90),
+                    course_slug=class_item.course_slug,
+                    label=f"{class_item.name} / {class_item.weekday} / {class_item.location_label}",
+                )
+            )
+        return slots
+
+    def create_trial_booking(self, payload: TrialBookingCreate) -> TrialBookingResponse:
+        staff = self.staff[0]
+        now = _now()
+        lead = Lead(
+            id=uuid4(),
+            name=payload.name,
+            phone=payload.phone,
+            email=payload.email,
+            line_id=payload.line_id,
+            source_channel="trial_booking",
+            interested_course_slug=payload.course_slug,
+            japanese_level=payload.japanese_level,
+            study_goal=payload.study_goal,
+            departure_plan_date=payload.departure_plan_date,
+            intent_score=82,
+            win_probability=68,
+            status="trial_booked",
+            assigned_staff_name=staff.name,
+            last_contact_at=now,
+            next_follow_up_at=payload.slot_start_at - timedelta(hours=24),
+            notes="來自公開試聽表單",
+            created_at=now,
+            updated_at=now,
+        )
+        self.leads.insert(0, lead)
+        self.lead_logs.insert(
+            0,
+            LeadLog(
+                id=uuid4(),
+                lead_id=lead.id,
+                staff_name=staff.name,
+                contact_method="system",
+                content="系統已建立試聽預約與顧問指派。",
+                next_action="試聽前一天發送提醒。",
+                created_at=now,
+            ),
+        )
+        self._persist()
+        return TrialBookingResponse(
+            booking_id=uuid4(),
+            lead_id=lead.id,
+            status="booked",
+            assigned_staff_name=staff.name,
+            next_follow_up_at=lead.next_follow_up_at or now,
+        )
+
+    def list_leads(self, status: str | None = None) -> list[Lead]:
+        items = self.leads
+        if status:
+            items = [item for item in items if item.status == status]
+        return items
+
+    def get_lead(self, lead_id: UUID) -> Lead:
+        for lead in self.leads:
+            if lead.id == lead_id:
+                return lead
+        raise KeyError(str(lead_id))
+
+    def logs_for_lead(self, lead_id: UUID) -> list[LeadLog]:
+        return [item for item in self.lead_logs if item.lead_id == lead_id]
+
+    def add_lead_log(self, lead_id: UUID, staff_name: str, contact_method: str, content: str, next_action: str | None) -> LeadLog:
+        log = LeadLog(
+            id=uuid4(),
+            lead_id=lead_id,
+            staff_name=staff_name,
+            contact_method=contact_method,
+            content=content,
+            next_action=next_action,
+            created_at=_now(),
+        )
+        self.lead_logs.insert(0, log)
+        self._persist()
+        return log
+
+    def assign_lead(self, lead_id: UUID, staff_id: UUID) -> Lead:
+        lead = self.get_lead(lead_id)
+        staff = next((item for item in self.staff if item.id == staff_id), None)
+        if staff is None:
+            raise KeyError(str(staff_id))
+        updated = lead.model_copy(
+            update={
+                "assigned_staff_name": staff.name,
+                "updated_at": _now(),
+            }
+        )
+        self.leads = [updated if item.id == lead_id else item for item in self.leads]
+        self.lead_logs.insert(
+            0,
+            LeadLog(
+                id=uuid4(),
+                lead_id=lead_id,
+                staff_name=staff.name,
+                contact_method="system",
+                content=f"系統已重新指派顧問為 {staff.name}。",
+                next_action="請顧問接手後更新下一次跟進時間。",
+                created_at=_now(),
+            ),
+        )
+        self._persist()
+        return updated
+
+    def change_lead_status(self, lead_id: UUID, payload: LeadStatusChangeRequest) -> Lead:
+        lead = self.get_lead(lead_id)
+        updated = lead.model_copy(
+            update={
+                "status": payload.status,
+                "next_follow_up_at": payload.next_follow_up_at,
+                "updated_at": _now(),
+            }
+        )
+        self.leads = [updated if item.id == lead_id else item for item in self.leads]
+        if payload.note:
+            self.lead_logs.insert(
+                0,
+                LeadLog(
+                    id=uuid4(),
+                    lead_id=lead_id,
+                    staff_name=updated.assigned_staff_name or "System",
+                    contact_method="system",
+                    content=f"狀態更新為 {payload.status}。{payload.note}",
+                    next_action=None,
+                    created_at=_now(),
+                ),
+            )
+        self._persist()
+        return updated
+
+    def create_enrollment(self, payload: EnrollmentCreate) -> EnrollmentResponse:
+        matched_class = next((item for item in self.classes if item.id == payload.class_id), None)
+        if matched_class is None:
+            raise KeyError(str(payload.class_id))
+        student = StudentRecord(
+            id=uuid4(),
+            chinese_name=payload.chinese_name,
+            email=payload.email,
+            phone=payload.phone,
+            japanese_level=payload.japanese_level,
+            study_goal=payload.study_goal,
+            status="active",
+            created_at=_now(),
+        )
+        self.students.append(student)
+        enrollment = EnrollmentRecord(
+            id=uuid4(),
+            student_id=student.id,
+            class_id=matched_class.id,
+            status="pending",
+            payment_status="pending",
+            list_price=next(course.price for course in self.courses if course.slug == matched_class.course_slug),
+            paid_amount=0,
+            created_at=_now(),
+        )
+        self.enrollments.append(enrollment)
+        order_no = f"JLS-{len(self.payments)+1:05d}"
+        payment = PaymentRecord(
+            id=uuid4(),
+            enrollment_id=enrollment.id,
+            order_no=order_no,
+            amount=enrollment.list_price,
+            payment_method=payload.payment_method,
+            status="pending",
+            created_at=_now(),
+        )
+        self.payments.append(payment)
+        self._persist()
+        return EnrollmentResponse(
+            enrollment_id=enrollment.id,
+            student_id=student.id,
+            payment_id=payment.id,
+            order_no=payment.order_no,
+            status=enrollment.status,
+            payment_status=payment.status,
+        )
+
+    def list_enrollments(self) -> list[EnrollmentRecord]:
+        return self.enrollments
+
+    def list_payments(self) -> list[PaymentRecord]:
+        return self.payments
+
+    def create_payment_intent(self, payload: PaymentIntentCreate) -> PaymentIntentResponse:
+        enrollment = next((item for item in self.enrollments if item.id == payload.enrollment_id), None)
+        if enrollment is None:
+            raise KeyError(str(payload.enrollment_id))
+        payment = next((item for item in self.payments if item.enrollment_id == payload.enrollment_id), None)
+        if payment is None:
+            order_no = f"JLS-{len(self.payments)+1:05d}"
+            payment = PaymentRecord(
+                id=uuid4(),
+                enrollment_id=enrollment.id,
+                order_no=order_no,
+                amount=enrollment.list_price,
+                payment_method=payload.payment_method,
+                status="pending",
+                created_at=_now(),
+            )
+            self.payments.append(payment)
+            self._persist()
+        return PaymentIntentResponse(
+            payment_id=payment.id,
+            order_no=payment.order_no,
+            amount=payment.amount,
+            payment_method=payment.payment_method,
+            status=payment.status,
+            client_token=f"demo_{payment.order_no}",
+        )
+
+    def apply_payment_webhook(self, payload: PaymentWebhookPayload) -> PaymentRecord:
+        payment = next((item for item in self.payments if item.order_no == payload.order_no), None)
+        if payment is None:
+            raise KeyError(payload.order_no)
+        updated_payment = payment.model_copy(
+            update={
+                "status": payload.status,
+                "paid_at": payload.paid_at or (_now() if payload.status == "paid" else None),
+            }
+        )
+        self.payments = [updated_payment if item.id == payment.id else item for item in self.payments]
+        enrollment = next((item for item in self.enrollments if item.id == payment.enrollment_id), None)
+        if enrollment is not None:
+            enrollment_payment_status = payload.status if payload.status != "failed" else "failed"
+            enrollment_status = "active" if payload.status == "paid" else enrollment.status
+            updated_enrollment = enrollment.model_copy(
+                update={
+                    "payment_status": enrollment_payment_status,
+                    "status": enrollment_status,
+                    "paid_amount": updated_payment.amount if payload.status == "paid" else enrollment.paid_amount,
+                }
+            )
+            self.enrollments = [updated_enrollment if item.id == enrollment.id else item for item in self.enrollments]
+        self._persist()
+        return updated_payment
+
+    def list_staff(self) -> list[StaffRecord]:
+        return self.staff
+
+    def get_user_by_email(self, email: str) -> UserAccount | None:
+        lowered = email.strip().lower()
+        return next((item for item in self.users if item.email.lower() == lowered), None)
+
+    def get_user_by_id(self, user_id: UUID) -> UserAccount | None:
+        return next((item for item in self.users if item.id == user_id), None)
+
+    def dashboard_metrics(self) -> DashboardMetrics:
+        now = _now()
+        week_start = now - timedelta(days=7)
+        return DashboardMetrics(
+            today_new_leads=sum(1 for item in self.leads if item.created_at.date() == now.date()),
+            this_week_trial_bookings=sum(1 for item in self.leads if item.status == "trial_booked" and item.created_at >= week_start),
+            this_week_enrollments=sum(1 for item in self.enrollments if item.created_at >= week_start),
+            paid_revenue_total=sum(item.amount for item in self.payments if item.status == "paid"),
+            pending_follow_ups=sum(1 for item in self.leads if item.next_follow_up_at and item.next_follow_up_at <= now),
+            active_classes=sum(1 for item in self.classes if item.status == "open"),
+        )
+
+    def followup_draft(self, lead_id: UUID) -> FollowupDraftResponse:
+        lead = self.get_lead(lead_id)
+        course_name = lead.interested_course_slug or "課程"
+        return FollowupDraftResponse(
+            lead_id=lead.id,
+            recommended_channel="line" if lead.line_id or lead.phone else "email",
+            line_message=(
+                f"{lead.name} 您好，我是 Japan Life Language School 的招生顧問。"
+                f"看到您對 {course_name} 有興趣，想幫您整理最適合的上課方式與近期可預約時段。"
+                "如果方便，我可以直接幫您安排一堂試聽。"
+            ),
+            email_subject=f"{lead.name} 您的日語課程建議與近期開班資訊",
+            email_message=(
+                f"{lead.name} 您好，\n\n"
+                f"根據您目前的程度與目標，我們建議先從 {course_name} 開始。"
+                "如果您希望，我們可以先安排試聽，再依照赴日時間幫您排最合適的班。"
+            ),
+            next_step="先確認學員可試聽的日期，再提供 1 到 2 個具體班級選項。",
+        )
+
+
+store = SchoolPlatformStore()
+
+
+FILE: school_platform/schemas.py
+--------------------------------
+from __future__ import annotations
+
+from datetime import date, datetime, time
+from typing import Literal
+from uuid import UUID
+
+from pydantic import BaseModel, Field
+
+
+LeadStatus = Literal[
+    "new",
+    "contacted",
+    "replied",
+    "trial_booked",
+    "trial_completed",
+    "considering",
+    "enrolled",
+    "waitlisted",
+    "lost",
+    "blacklisted",
+]
+
+
+class CourseSummary(BaseModel):
+    id: UUID
+    slug: str
+    name: str
+    course_type: str
+    level: str
+    delivery_mode: str
+    price: float
+    short_description: str
+
+
+class CourseDetail(CourseSummary):
+    objectives: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    modules: list[str] = Field(default_factory=list)
+    teacher_names: list[str] = Field(default_factory=list)
+
+
+class ClassSummary(BaseModel):
+    id: UUID
+    course_id: UUID
+    course_slug: str
+    name: str
+    teacher_name: str
+    start_date: date
+    end_date: date
+    weekday: str
+    start_time: time
+    end_time: time
+    capacity: int
+    enrolled_count: int
+    location_label: str
+    status: str
+
+
+class CourseUpsertRequest(BaseModel):
+    slug: str
+    name: str
+    course_type: str
+    level: str
+    delivery_mode: str
+    price: float
+    short_description: str
+    objectives: list[str] = Field(default_factory=list)
+    highlights: list[str] = Field(default_factory=list)
+    modules: list[str] = Field(default_factory=list)
+    teacher_names: list[str] = Field(default_factory=list)
+
+
+class ClassUpsertRequest(BaseModel):
+    course_slug: str
+    name: str
+    teacher_name: str
+    start_date: date
+    end_date: date
+    weekday: str
+    start_time: time
+    end_time: time
+    capacity: int
+    location_label: str
+    status: str = "open"
+
+
+class Lead(BaseModel):
+    id: UUID
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    line_id: str | None = None
+    source_channel: str
+    campaign_name: str | None = None
+    interested_course_slug: str | None = None
+    budget_range: str | None = None
+    japanese_level: str | None = None
+    study_goal: str | None = None
+    departure_plan_date: date | None = None
+    intent_score: float = 0
+    win_probability: float = 0
+    status: LeadStatus = "new"
+    assigned_staff_name: str | None = None
+    last_contact_at: datetime | None = None
+    next_follow_up_at: datetime | None = None
+    notes: str | None = None
+    created_at: datetime
+    updated_at: datetime
+
+
+class LeadLog(BaseModel):
+    id: UUID
+    lead_id: UUID
+    staff_name: str
+    contact_method: str
+    content: str
+    next_action: str | None = None
+    created_at: datetime
+
+
+class TrialSlot(BaseModel):
+    starts_at: datetime
+    ends_at: datetime
+    course_slug: str
+    label: str
+
+
+class TrialBookingCreate(BaseModel):
+    name: str
+    phone: str | None = None
+    email: str | None = None
+    line_id: str | None = None
+    course_slug: str
+    slot_start_at: datetime
+    japanese_level: str | None = None
+    study_goal: str | None = None
+    departure_plan_date: date | None = None
+
+
+class TrialBookingResponse(BaseModel):
+    booking_id: UUID
+    lead_id: UUID
+    status: str
+    assigned_staff_name: str
+    next_follow_up_at: datetime
+
+
+class LeadAssignmentRequest(BaseModel):
+    staff_id: UUID
+
+
+class LeadStatusChangeRequest(BaseModel):
+    status: LeadStatus
+    next_follow_up_at: datetime | None = None
+    note: str | None = None
+
+
+class EnrollmentCreate(BaseModel):
+    chinese_name: str
+    email: str
+    phone: str | None = None
+    class_id: UUID
+    japanese_level: str | None = None
+    study_goal: str | None = None
+    coupon_code: str | None = None
+    payment_method: Literal["card", "transfer", "cash"] = "card"
+
+
+class EnrollmentResponse(BaseModel):
+    enrollment_id: UUID
+    student_id: UUID
+    payment_id: UUID
+    order_no: str
+    status: str
+    payment_status: str
+
+
+class PaymentRecord(BaseModel):
+    id: UUID
+    enrollment_id: UUID
+    order_no: str
+    amount: float
+    payment_method: str
+    status: str
+    paid_at: datetime | None = None
+    created_at: datetime
+
+
+class PaymentIntentCreate(BaseModel):
+    enrollment_id: UUID
+    payment_method: Literal["card", "transfer", "cash"] = "card"
+
+
+class PaymentIntentResponse(BaseModel):
+    payment_id: UUID
+    order_no: str
+    amount: float
+    payment_method: str
+    status: str
+    client_token: str
+
+
+class PaymentWebhookPayload(BaseModel):
+    order_no: str
+    status: Literal["paid", "failed", "refunded"]
+    paid_at: datetime | None = None
+
+
+class StudentRecord(BaseModel):
+    id: UUID
+    chinese_name: str
+    email: str
+    phone: str | None = None
+    japanese_level: str | None = None
+    study_goal: str | None = None
+    status: str
+    created_at: datetime
+
+
+class EnrollmentRecord(BaseModel):
+    id: UUID
+    student_id: UUID
+    class_id: UUID
+    status: str
+    payment_status: str
+    list_price: float
+    paid_amount: float
+    created_at: datetime
+
+
+class StaffRecord(BaseModel):
+    id: UUID
+    name: str
+    role: str
+    department: str
+    title: str
+
+
+class UserAccount(BaseModel):
+    id: UUID
+    email: str
+    name: str
+    password_hash: str
+    role: str
+    staff_id: UUID | None = None
+    permissions: list[str] = Field(default_factory=list)
+    status: str = "active"
+
+
+class AuthLoginRequest(BaseModel):
+    email: str
+    password: str
+
+
+class AuthUserResponse(BaseModel):
+    id: UUID
+    email: str
+    name: str
+    role: str
+    permissions: list[str] = Field(default_factory=list)
+    staff_id: UUID | None = None
+
+
+class AuthSessionResponse(BaseModel):
+    access_token: str
+    token_type: str = "bearer"
+    user: AuthUserResponse
+
+
+class DashboardMetrics(BaseModel):
+    today_new_leads: int
+    this_week_trial_bookings: int
+    this_week_enrollments: int
+    paid_revenue_total: float
+    pending_follow_ups: int
+    active_classes: int
+
+
+class HomePayload(BaseModel):
+    brand_name: str
+    hero_title: str
+    hero_subtitle: str
+    featured_courses: list[CourseSummary]
+    value_props: list[str]
+
+
+class FollowupDraftResponse(BaseModel):
+    lead_id: UUID
+    recommended_channel: str
+    line_message: str
+    email_subject: str
+    email_message: str
+    next_step: str
+
+
+FILE: school_platform/repository.py
+-----------------------------------
+from __future__ import annotations
+
+import json
+from pathlib import Path
+from typing import Any
+
+
+class JsonRepository:
+    def __init__(self, path: str) -> None:
+        self.path = Path(path)
+        self.path.parent.mkdir(parents=True, exist_ok=True)
+
+    def load(self) -> dict[str, Any] | None:
+        if not self.path.exists():
+            return None
+        return json.loads(self.path.read_text(encoding="utf-8"))
+
+    def save(self, payload: dict[str, Any]) -> None:
+        self.path.write_text(
+            json.dumps(payload, ensure_ascii=False, indent=2),
+            encoding="utf-8",
+        )
+
+
+FILE: tests/test_school_platform_api.py
+---------------------------------------
+from __future__ import annotations
+
+import unittest
+
+from fastapi.testclient import TestClient
+
+from api import app
+
+
+class SchoolPlatformApiTest(unittest.TestCase):
+    def setUp(self) -> None:
+        self.client = TestClient(app)
+
+    def login_headers(self, email: str = "manager@jls.local", password: str = "manager123") -> dict[str, str]:
+        response = self.client.post(
+            "/school-platform/api/auth/login",
+            json={"email": email, "password": password},
+        )
+        self.assertEqual(response.status_code, 200)
+        token = response.json()["data"]["access_token"]
+        return {"Authorization": f"Bearer {token}"}
+
+    def test_public_courses_and_dashboard(self) -> None:
+        courses_response = self.client.get("/school-platform/api/public/courses")
+        self.assertEqual(courses_response.status_code, 200)
+        courses = courses_response.json()["data"]
+        self.assertGreaterEqual(len(courses), 3)
+
+        dashboard_response = self.client.get("/school-platform/api/admin/dashboard", headers=self.login_headers())
+        self.assertEqual(dashboard_response.status_code, 200)
+        dashboard = dashboard_response.json()["data"]
+        self.assertIn("active_classes", dashboard)
+
+    def test_admin_endpoints_require_auth(self) -> None:
+        response = self.client.get("/school-platform/api/admin/dashboard")
+        self.assertEqual(response.status_code, 401)
+
+    def test_trial_booking_creates_lead(self) -> None:
+        headers = self.login_headers()
+        before = self.client.get("/school-platform/api/leads", headers=headers).json()["data"]
+
+        slot = self.client.get("/school-platform/api/public/trial-slots").json()["data"][0]
+        booking_response = self.client.post(
+            "/school-platform/api/public/trial-bookings",
+            json={
+                "name": "新試聽學員",
+                "email": "trial@example.com",
+                "phone": "0911222333",
+                "course_slug": slot["course_slug"],
+                "slot_start_at": slot["starts_at"],
+                "japanese_level": "beginner",
+                "study_goal": "赴日前生活會話",
+            },
+        )
+        self.assertEqual(booking_response.status_code, 200)
+
+        after = self.client.get("/school-platform/api/leads", headers=headers).json()["data"]
+        self.assertEqual(len(after), len(before) + 1)
+
+    def test_enrollment_payment_flow(self) -> None:
+        headers = self.login_headers()
+        class_id = self.client.get("/school-platform/api/public/classes/open").json()["data"][0]["id"]
+
+        enrollment_response = self.client.post(
+            "/school-platform/api/public/enrollments",
+            json={
+                "chinese_name": "付款學員",
+                "email": "paying@example.com",
+                "phone": "0900111222",
+                "class_id": class_id,
+                "payment_method": "card",
+            },
+        )
+        self.assertEqual(enrollment_response.status_code, 200)
+        enrollment = enrollment_response.json()["data"]
+
+        intent_response = self.client.post(
+            "/school-platform/api/public/payments/create-intent",
+            json={
+                "enrollment_id": enrollment["enrollment_id"],
+                "payment_method": "card",
+            },
+        )
+        self.assertEqual(intent_response.status_code, 200)
+        intent = intent_response.json()["data"]
+        self.assertEqual(intent["status"], "pending")
+
+        webhook_response = self.client.post(
+            "/school-platform/api/payments/webhook",
+            json={
+                "order_no": enrollment["order_no"],
+                "status": "paid",
+            },
+        )
+        self.assertEqual(webhook_response.status_code, 200)
+        self.assertEqual(webhook_response.json()["data"]["status"], "paid")
+
+        dashboard_response = self.client.get("/school-platform/api/admin/dashboard", headers=headers)
+        self.assertEqual(dashboard_response.status_code, 200)
+
+    def test_manager_can_create_course_and_class(self) -> None:
+        headers = self.login_headers()
+
+        course_response = self.client.post(
+            "/school-platform/api/courses",
+            headers=headers,
+            json={
+                "slug": "survival-japanese-night",
+                "name": "日本生活生存會話夜間班",
+                "course_type": "生活日語",
+                "level": "N5",
+                "delivery_mode": "online",
+                "price": 11800,
+                "short_description": "給晚間上班族的生活會話班。",
+                "objectives": ["生活自理", "會話應答"],
+                "highlights": ["夜間上課"],
+                "modules": ["問路", "購物"],
+                "teacher_names": ["Aki Mori"],
+            },
+        )
+        self.assertEqual(course_response.status_code, 200)
+
+        class_response = self.client.post(
+            "/school-platform/api/classes",
+            headers=headers,
+            json={
+                "course_slug": "survival-japanese-night",
+                "name": "6 月夜間班",
+                "teacher_name": "Aki Mori",
+                "start_date": "2026-06-01",
+                "end_date": "2026-07-15",
+                "weekday": "Tue / Thu",
+                "start_time": "19:30:00",
+                "end_time": "21:00:00",
+                "capacity": 16,
+                "location_label": "Zoom Live",
+                "status": "open",
+            },
+        )
+        self.assertEqual(class_response.status_code, 200)
+
+        consultant_headers = self.login_headers(email="mika@jls.local", password="mika123")
+        forbidden = self.client.post(
+            "/school-platform/api/courses",
+            headers=consultant_headers,
+            json={
+                "slug": "forbidden-course",
+                "name": "Forbidden",
+                "course_type": "生活日語",
+                "level": "N5",
+                "delivery_mode": "online",
+                "price": 1,
+                "short_description": "x",
+            },
+        )
+        self.assertEqual(forbidden.status_code, 403)
+
+
+if __name__ == "__main__":
+    unittest.main()
+

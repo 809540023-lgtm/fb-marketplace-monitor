@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+.venv/
+.venv-test/
+.env
+.DS_Store
+.pytest_cache/
+.mypy_cache/
+*.log
+data/digichef_uploads/
+data/digichef_uploads_test/
+data/digichef_store.test.json

@@ -1,0 +1,209 @@
+services:
+  - type: web
+    name: ai-agent-team-api
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn api:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: OPENAI_RESEARCH_MODEL
+        value: gpt-4.1-mini
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: APIFY_ACTOR_ID
+        value: apify/facebook-marketplace-scraper
+      - key: FREE_MODE
+        value: "false"
+      - key: DEFAULT_LOCATION_NAME
+        value: New Taipei City,Taipei,Taoyuan
+      - key: DEFAULT_QUERY
+        value: 二手 生財 餐飲 器具
+      - key: DEFAULT_MAX_RESULTS
+        value: "3"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: PUBLISH_ENABLED
+        value: "false"
+      - key: PUBLISH_DRY_RUN
+        value: "true"
+      - key: FACEBOOK_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: THREADS_ACCESS_TOKEN
+        sync: false
+      - key: THREADS_USER_ID
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_CHANNEL_ID
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_OFFICIAL_ACCOUNT_URL
+        sync: false
+      - key: GOOGLE_DRIVE_ROOT_FOLDER_ID
+        value: 1vi-gnzBXz_3Oo_HkrXw8x_Kp6bqajlyH
+      - key: INVENTORY_CONTACT_PHONE
+        value: "0915888927"
+      - key: SCHOOL_PLATFORM_STORAGE_BACKEND
+        value: json
+      - key: SCHOOL_PLATFORM_JSON_PATH
+        value: data/school_platform_store.json
+      - key: SCHOOL_PLATFORM_APP_BASE_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_POSTGRES_DSN
+        sync: false
+      - key: SCHOOL_PLATFORM_PAYMENT_PROVIDER
+        value: mock
+      - key: SCHOOL_PLATFORM_PAYMENT_CURRENCY
+        value: jpy
+      - key: SCHOOL_PLATFORM_STRIPE_SECRET_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_SUCCESS_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_CANCEL_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_EMAIL_PROVIDER
+        value: mock
+      - key: SCHOOL_PLATFORM_SMTP_HOST
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_PORT
+        value: "587"
+      - key: SCHOOL_PLATFORM_SMTP_USERNAME
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_PASSWORD
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_FROM_EMAIL
+        sync: false
+      - key: SCHOOL_PLATFORM_RESEND_API_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_RESEND_FROM_EMAIL
+        sync: false
+      - key: SCHOOL_PLATFORM_LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: SCHOOL_PLATFORM_LINE_CHANNEL_SECRET
+        sync: false
+
+  - type: cron
+    name: ai-agent-team-cron
+    runtime: python
+    plan: starter
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py --query "$DEFAULT_QUERY"
+    schedule: "*/30 * * * *"
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.8
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: OPENAI_MODEL
+        value: gpt-4.1-mini
+      - key: OPENAI_RESEARCH_MODEL
+        value: gpt-4.1-mini
+      - key: APIFY_API_TOKEN
+        sync: false
+      - key: APIFY_ACTOR_ID
+        value: apify/facebook-marketplace-scraper
+      - key: FREE_MODE
+        value: "false"
+      - key: DEFAULT_LOCATION_NAME
+        value: New Taipei City,Taipei,Taoyuan
+      - key: DEFAULT_QUERY
+        value: 二手 生財 餐飲 器具
+      - key: DEFAULT_MAX_RESULTS
+        value: "3"
+      - key: SCHEDULE_TIMEZONE
+        value: Asia/Taipei
+      - key: DAYTIME_START_HOUR
+        value: "8"
+      - key: NIGHTTIME_START_HOUR
+        value: "23"
+      - key: NIGHT_RUN_HOURS
+        value: "2,5"
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: PUBLISH_ENABLED
+        value: "false"
+      - key: PUBLISH_DRY_RUN
+        value: "true"
+      - key: FACEBOOK_PAGE_ACCESS_TOKEN
+        sync: false
+      - key: FACEBOOK_PAGE_ID
+        sync: false
+      - key: INSTAGRAM_BUSINESS_ACCOUNT_ID
+        sync: false
+      - key: THREADS_ACCESS_TOKEN
+        sync: false
+      - key: THREADS_USER_ID
+        sync: false
+      - key: SLACK_BOT_TOKEN
+        sync: false
+      - key: SLACK_CHANNEL_ID
+        sync: false
+      - key: LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: LINE_OFFICIAL_ACCOUNT_URL
+        sync: false
+      - key: GOOGLE_DRIVE_ROOT_FOLDER_ID
+        value: 1vi-gnzBXz_3Oo_HkrXw8x_Kp6bqajlyH
+      - key: INVENTORY_CONTACT_PHONE
+        value: "0915888927"
+      - key: SCHOOL_PLATFORM_STORAGE_BACKEND
+        value: json
+      - key: SCHOOL_PLATFORM_JSON_PATH
+        value: data/school_platform_store.json
+      - key: SCHOOL_PLATFORM_APP_BASE_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_POSTGRES_DSN
+        sync: false
+      - key: SCHOOL_PLATFORM_PAYMENT_PROVIDER
+        value: mock
+      - key: SCHOOL_PLATFORM_PAYMENT_CURRENCY
+        value: jpy
+      - key: SCHOOL_PLATFORM_STRIPE_SECRET_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_PUBLISHABLE_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_WEBHOOK_SECRET
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_SUCCESS_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_STRIPE_CANCEL_URL
+        sync: false
+      - key: SCHOOL_PLATFORM_EMAIL_PROVIDER
+        value: mock
+      - key: SCHOOL_PLATFORM_SMTP_HOST
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_PORT
+        value: "587"
+      - key: SCHOOL_PLATFORM_SMTP_USERNAME
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_PASSWORD
+        sync: false
+      - key: SCHOOL_PLATFORM_SMTP_FROM_EMAIL
+        sync: false
+      - key: SCHOOL_PLATFORM_RESEND_API_KEY
+        sync: false
+      - key: SCHOOL_PLATFORM_RESEND_FROM_EMAIL
+        sync: false
+      - key: SCHOOL_PLATFORM_LINE_CHANNEL_ACCESS_TOKEN
+        sync: false
+      - key: SCHOOL_PLATFORM_LINE_CHANNEL_SECRET
+        sync: false

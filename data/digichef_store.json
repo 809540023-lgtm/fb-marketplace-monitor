@@ -1,0 +1,555 @@
+{
+  "products": [
+    {
+      "code": "A",
+      "name": "輕纖果醋雞胸",
+      "protein_source": "雞胸",
+      "raw_weight_g": 150,
+      "marinade_note": "雞胸 150g + 米酒 10cc + 蘋果醋 5cc",
+      "description": "清爽果醋風味，主打高蛋白與保水度。",
+      "main_cost": 19.13,
+      "combo_cost": 28.13,
+      "calories": 344,
+      "protein_g": 41.1,
+      "fat_g": 6.3,
+      "carbs_g": 25.9,
+      "subscription_price_total": 840.0,
+      "subscription_unit_price": 56.0,
+      "retail_price": 84.0,
+      "texture_style": "多汁",
+      "cooking_profile": {
+        "mode": "Combi-Steam",
+        "temperature_c": 160,
+        "humidity_pct": 70,
+        "fan_speed": 2,
+        "target_core_temp_c": 73,
+        "tray_type": "平底烤盤",
+        "finish_note": "以探針確認中心 72-74°C，重點是鎖水。"
+      }
+    },
+    {
+      "code": "B",
+      "name": "日式薄粉雞胸",
+      "protein_source": "雞胸",
+      "raw_weight_g": 150,
+      "marinade_note": "雞胸 150g + 日清粉 5g + 米酒 5cc",
+      "description": "外層薄脆上色，適合喜歡乾爽口感的客群。",
+      "main_cost": 19.54,
+      "combo_cost": 28.54,
+      "calories": 355,
+      "protein_g": 41.4,
+      "fat_g": 6.3,
+      "carbs_g": 29.6,
+      "subscription_price_total": 855.0,
+      "subscription_unit_price": 57.0,
+      "retail_price": 86.0,
+      "texture_style": "酥炸",
+      "cooking_profile": {
+        "mode": "Dry Heat",
+        "temperature_c": 215,
+        "humidity_pct": 0,
+        "fan_speed": 4,
+        "target_core_temp_c": 73,
+        "tray_type": "洞洞烤盤",
+        "finish_note": "表面需噴微量油脂，確保金黃酥脆。"
+      }
+    },
+    {
+      "code": "C",
+      "name": "鮮萃醋漬雞腿",
+      "protein_source": "去皮雞腿",
+      "raw_weight_g": 150,
+      "marinade_note": "去皮雞腿 150g + 米酒 10cc + 蘋果醋 5cc",
+      "description": "雞腿油脂更豐富，適合追求肉汁與飽足感。",
+      "main_cost": 25.13,
+      "combo_cost": 34.13,
+      "calories": 401,
+      "protein_g": 36.6,
+      "fat_g": 16.9,
+      "carbs_g": 25.9,
+      "subscription_price_total": 1020.0,
+      "subscription_unit_price": 68.0,
+      "retail_price": 102.0,
+      "texture_style": "多汁",
+      "cooking_profile": {
+        "mode": "Combi-Steam",
+        "temperature_c": 170,
+        "humidity_pct": 70,
+        "fan_speed": 3,
+        "target_core_temp_c": 73,
+        "tray_type": "平底烤盤",
+        "finish_note": "雞腿需要穩定熟度與肉汁表現。"
+      }
+    },
+    {
+      "code": "D",
+      "name": "經典金黃雞腿",
+      "protein_source": "去皮雞腿",
+      "raw_weight_g": 150,
+      "marinade_note": "去皮雞腿 150g + 日清粉 5g + 米酒 5cc",
+      "description": "外觀最有賣相，適合未來做視覺主打商品。",
+      "main_cost": 25.54,
+      "combo_cost": 34.54,
+      "calories": 412,
+      "protein_g": 36.9,
+      "fat_g": 17.0,
+      "carbs_g": 29.6,
+      "subscription_price_total": 1035.0,
+      "subscription_unit_price": 69.0,
+      "retail_price": 104.0,
+      "texture_style": "酥炸",
+      "cooking_profile": {
+        "mode": "Dry Heat",
+        "temperature_c": 215,
+        "humidity_pct": 0,
+        "fan_speed": 4,
+        "target_core_temp_c": 73,
+        "tray_type": "洞洞烤盤",
+        "finish_note": "重點檢查金黃度、酥感與出油控制。"
+      }
+    }
+  ],
+  "tasks": [
+    {
+      "id": "f8e676ab-4792-406e-a495-05664b61ae45",
+      "work_date": "2026-04-14",
+      "shift_label": "早班",
+      "owner_name": "測試員工",
+      "title": "開工盤點與測試前確認",
+      "checklist": [
+        "拍現場照與冰箱現況",
+        "確認雞胸、雞腿、米酒、蘋果醋、日清粉、蛋、地瓜",
+        "確認磅秤、探針與烤箱可用"
+      ],
+      "status": "in_progress",
+      "notes": "已開始",
+      "decision_needed": "若缺料或設備異常，要立刻回報老闆。",
+      "created_at": "2026-04-14T08:13:41.295447+08:00",
+      "updated_at": "2026-04-14T08:38:42.846955+08:00"
+    },
+    {
+      "id": "17e521b4-472a-483c-84a6-2d5bd9c880f8",
+      "work_date": "2026-04-14",
+      "shift_label": "中班",
+      "owner_name": null,
+      "title": "A-D 套餐測試烤製",
+      "checklist": [
+        "建立 TEST-20260414-A1 到 D1",
+        "逐批記錄烤前重量、芯溫與烤後重量",
+        "每批補上外觀、口感、多汁度與照片"
+      ],
+      "status": "todo",
+      "notes": null,
+      "decision_needed": "若烤色或芯溫不穩，先標記待複測。",
+      "created_at": "2026-04-14T08:13:41.295447+08:00",
+      "updated_at": "2026-04-14T08:13:41.295447+08:00"
+    },
+    {
+      "id": "74aba02f-266f-422b-ba9e-d2165693597a",
+      "work_date": "2026-04-14",
+      "shift_label": "收班",
+      "owner_name": null,
+      "title": "日結回報",
+      "checklist": [
+        "確認測試表欄位完整",
+        "確認照片連結可開啟",
+        "回報可列正式 SOP 與需複測項目"
+      ],
+      "status": "todo",
+      "notes": null,
+      "decision_needed": "確認 2026-04-15 是否需要補料或重測。",
+      "created_at": "2026-04-14T08:13:41.295447+08:00",
+      "updated_at": "2026-04-14T08:13:41.295447+08:00"
+    }
+  ],
+  "purchases": [
+    {
+      "purchase_date": "2026-04-14",
+      "supplier_name": "測試供應商",
+      "item_name": "雞胸",
+      "item_spec": "3kg/包",
+      "quantity": 1.0,
+      "unit": "包",
+      "unit_cost": 360.0,
+      "storage_location": "冷藏 A 區",
+      "check_result": "pass",
+      "photo_url": "https://example.com/purchase.jpg",
+      "recorded_by": "測試員工",
+      "notes": "purchase-42fbcde0-961b-4139-b29b-31b22b76a233",
+      "id": "c36baad9-5842-43bb-b17f-b6a425cf0a31",
+      "total_cost": 360.0,
+      "created_at": "2026-04-14T08:13:41.537640+08:00"
+    },
+    {
+      "purchase_date": "2026-04-14",
+      "supplier_name": "測試供應商",
+      "item_name": "雞胸",
+      "item_spec": "3kg/包",
+      "quantity": 1.0,
+      "unit": "包",
+      "unit_cost": 360.0,
+      "storage_location": "冷藏 A 區",
+      "check_result": "pass",
+      "photo_url": "https://example.com/purchase.jpg",
+      "recorded_by": "測試員工",
+      "notes": "purchase-f2285095-3120-4ebc-be56-ded9ea5038ff",
+      "id": "f18b7aac-a243-486a-8ea7-50c9fe000480",
+      "total_cost": 360.0,
+      "created_at": "2026-04-14T08:14:42.764289+08:00"
+    },
+    {
+      "purchase_date": "2026-04-14",
+      "supplier_name": "測試供應商",
+      "item_name": "雞胸",
+      "item_spec": "3kg/包",
+      "quantity": 1.0,
+      "unit": "包",
+      "unit_cost": 360.0,
+      "storage_location": "冷藏 A 區",
+      "check_result": "pass",
+      "photo_url": "https://example.com/purchase.jpg",
+      "recorded_by": "測試員工",
+      "notes": "purchase-2ef4d0ff-f8b5-423e-bad4-44555d2f8eb4",
+      "id": "4f5e65d0-ee7a-4aab-806c-1f78d23024da",
+      "total_cost": 360.0,
+      "created_at": "2026-04-14T08:38:42.821119+08:00"
+    }
+  ],
+  "marinade_batches": [
+    {
+      "batch_code": "TEST-404bed92",
+      "product_code": "A",
+      "protein_source": "雞胸",
+      "raw_weight_g": 150.0,
+      "portion_count": 1,
+      "rice_wine_cc": 10.0,
+      "apple_vinegar_cc": 5.0,
+      "flour_g": 0.0,
+      "marinade_started_at": "2026-04-14T09:30:00+08:00",
+      "planned_cook_date": "2026-04-14",
+      "status": "marinating",
+      "handled_by": "測試員工",
+      "notes": "batch note",
+      "id": "5295cea2-a16c-425d-bfea-14ee9af59f14",
+      "created_at": "2026-04-14T08:13:41.541717+08:00"
+    },
+    {
+      "batch_code": "TEST-5d07344f",
+      "product_code": "A",
+      "protein_source": "雞胸",
+      "raw_weight_g": 150.0,
+      "portion_count": 1,
+      "rice_wine_cc": 10.0,
+      "apple_vinegar_cc": 5.0,
+      "flour_g": 0.0,
+      "marinade_started_at": "2026-04-14T09:30:00+08:00",
+      "planned_cook_date": "2026-04-14",
+      "status": "marinating",
+      "handled_by": "測試員工",
+      "notes": "batch note",
+      "id": "4ea5eaff-f25c-430b-b7ef-a0d89dff5c0f",
+      "created_at": "2026-04-14T08:14:42.768270+08:00"
+    },
+    {
+      "batch_code": "TEST-6c6b7c00",
+      "product_code": "A",
+      "protein_source": "雞胸",
+      "raw_weight_g": 150.0,
+      "portion_count": 1,
+      "rice_wine_cc": 10.0,
+      "apple_vinegar_cc": 5.0,
+      "flour_g": 0.0,
+      "marinade_started_at": "2026-04-14T09:30:00+08:00",
+      "planned_cook_date": "2026-04-14",
+      "status": "marinating",
+      "handled_by": "測試員工",
+      "notes": "batch note",
+      "id": "5c1600fb-9881-4c31-a529-fc03d79b5930",
+      "created_at": "2026-04-14T08:38:42.825162+08:00"
+    }
+  ],
+  "oven_tests": [
+    {
+      "test_code": "T-c10c2f",
+      "test_date": "2026-04-14",
+      "product_code": "B",
+      "texture_style": "酥炸",
+      "oven_mode": "Dry Heat",
+      "temperature_c": 215,
+      "humidity_pct": 0,
+      "fan_speed": 4,
+      "target_core_temp_c": 73,
+      "actual_core_temp_c": 74.0,
+      "raw_weight_g": 150.0,
+      "cooked_weight_g": 123.0,
+      "appearance_score": 4,
+      "taste_score": 4,
+      "juiciness_score": 3,
+      "photo_url": "https://example.com/test.jpg",
+      "notes": "first pass",
+      "decision": "approved",
+      "recorded_by": "測試員工",
+      "id": "8c7df235-ff7f-4290-85f6-4a900721b4e6",
+      "weight_loss_pct": 18.0,
+      "created_at": "2026-04-14T08:13:41.545249+08:00"
+    },
+    {
+      "test_code": "T-07a156",
+      "test_date": "2026-04-14",
+      "product_code": "B",
+      "texture_style": "酥炸",
+      "oven_mode": "Dry Heat",
+      "temperature_c": 215,
+      "humidity_pct": 0,
+      "fan_speed": 4,
+      "target_core_temp_c": 73,
+      "actual_core_temp_c": 74.0,
+      "raw_weight_g": 150.0,
+      "cooked_weight_g": 123.0,
+      "appearance_score": 4,
+      "taste_score": 4,
+      "juiciness_score": 3,
+      "photo_url": "https://example.com/test.jpg",
+      "notes": "first pass",
+      "decision": "approved",
+      "recorded_by": "測試員工",
+      "id": "10ed9fa1-ac1a-44e2-87fe-2037362d1a27",
+      "weight_loss_pct": 18.0,
+      "created_at": "2026-04-14T08:14:42.773545+08:00"
+    },
+    {
+      "test_code": "T-1adaa2",
+      "test_date": "2026-04-14",
+      "product_code": "B",
+      "texture_style": "酥炸",
+      "oven_mode": "Dry Heat",
+      "temperature_c": 215,
+      "humidity_pct": 0,
+      "fan_speed": 4,
+      "target_core_temp_c": 73,
+      "actual_core_temp_c": 74.0,
+      "raw_weight_g": 150.0,
+      "cooked_weight_g": 123.0,
+      "appearance_score": 4,
+      "taste_score": 4,
+      "juiciness_score": 3,
+      "photo_url": "https://example.com/test.jpg",
+      "notes": "first pass",
+      "decision": "approved",
+      "recorded_by": "測試員工",
+      "id": "ae76891f-b8cc-4004-b6f7-4ecd501bdaeb",
+      "weight_loss_pct": 18.0,
+      "created_at": "2026-04-14T08:38:42.829094+08:00"
+    }
+  ],
+  "photo_assets": [
+    {
+      "captured_on": "2026-04-14",
+      "product_code": "C",
+      "stage": "cut",
+      "file_name": "C_20260414_cut_70e1.jpg",
+      "drive_url": "https://example.com/photo.jpg",
+      "purpose": "測試紀錄",
+      "captured_by": "測試員工",
+      "review_status": "pending",
+      "notes": "photo note",
+      "id": "0f8e2921-ed33-4e88-8ae3-f9963868d164",
+      "created_at": "2026-04-14T08:13:41.551875+08:00"
+    },
+    {
+      "captured_on": "2026-04-14",
+      "product_code": "C",
+      "stage": "cut",
+      "file_name": "C_20260414_cut_c3d4.jpg",
+      "drive_url": "https://example.com/photo.jpg",
+      "purpose": "測試紀錄",
+      "captured_by": "測試員工",
+      "review_status": "pending",
+      "notes": "photo note",
+      "id": "089f50ce-96dd-42cf-9625-31c84c9d023c",
+      "created_at": "2026-04-14T08:14:42.781090+08:00"
+    },
+    {
+      "captured_on": "2026-04-14",
+      "product_code": "C",
+      "stage": "cut",
+      "file_name": "C_20260414_cut_6aab.jpg",
+      "drive_url": "https://example.com/photo.jpg",
+      "purpose": "測試紀錄",
+      "captured_by": "測試員工",
+      "review_status": "pending",
+      "notes": "photo note",
+      "id": "c8f92ca6-da37-4ff4-b915-f294d4aa78d9",
+      "created_at": "2026-04-14T08:38:42.835938+08:00"
+    }
+  ],
+  "sops": [
+    {
+      "id": "39560b64-5906-4e71-8638-c23731b4109a",
+      "code": "SOP-01",
+      "category": "開工",
+      "title": "開工盤點",
+      "version": "v1.0",
+      "status": "active",
+      "trigger_condition": "每日第一個工作動作",
+      "steps": [
+        "確認冷藏、冷凍、乾貨區",
+        "確認烤箱、磅秤、探針與工作台狀態",
+        "若異常，先拍照再回報"
+      ],
+      "completion_standard": "缺料與異常已記錄在線上表單",
+      "required_uploads": [
+        "現場照",
+        "冰箱現況"
+      ],
+      "exception_rule": "設備異常時不得直接進入測試。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    },
+    {
+      "id": "0647ba79-f4ca-4bc0-8a23-a6bfa280412d",
+      "code": "SOP-02",
+      "category": "進貨",
+      "title": "進貨驗收",
+      "version": "v1.0",
+      "status": "active",
+      "trigger_condition": "任何原料到貨時",
+      "steps": [
+        "拍包裝與到貨整體照",
+        "核對規格、數量、單價",
+        "寫入存放位置與到貨檢查結果"
+      ],
+      "completion_standard": "供應商、數量、成本、照片與庫存位置完整",
+      "required_uploads": [
+        "進貨照",
+        "發票或收據照"
+      ],
+      "exception_rule": "品質異常需標記待觀察或退貨。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    },
+    {
+      "id": "1356976d-cb12-4cf3-bcdf-1ddb44b292fd",
+      "code": "SOP-03",
+      "category": "醃製",
+      "title": "醃製批次建立",
+      "version": "v1.0",
+      "status": "active",
+      "trigger_condition": "任何新批次準備時",
+      "steps": [
+        "依方案確認肉品與配方",
+        "每份秤重 150g",
+        "封袋並標示方案、日期與批次號"
+      ],
+      "completion_standard": "批次可追溯到配方與執行人",
+      "required_uploads": [
+        "醃製批次照"
+      ],
+      "exception_rule": "配方錯誤或未標記的批次不得進入後續流程。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    },
+    {
+      "id": "144c8148-d0d1-434a-9cf8-1bbe4ee7e02e",
+      "code": "SOP-04",
+      "category": "測試",
+      "title": "烤製測試紀錄",
+      "version": "v1.0",
+      "status": "active",
+      "trigger_condition": "新品測試或參數調整",
+      "steps": [
+        "依產品設定輸入模式、溫度、濕度、風速",
+        "出爐後立刻量芯溫、秤重、拍照",
+        "完成外觀、口感與多汁度評分"
+      ],
+      "completion_standard": "每批都有完整數據與照片",
+      "required_uploads": [
+        "出爐照",
+        "切面照"
+      ],
+      "exception_rule": "若芯溫不達標，直接列入待複測。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    },
+    {
+      "id": "c44c9e76-3767-490d-ae48-659c37660528",
+      "code": "SOP-05",
+      "category": "成品",
+      "title": "成品拍照上傳",
+      "version": "v1.0",
+      "status": "active",
+      "trigger_condition": "每一批完成後",
+      "steps": [
+        "依命名規則上傳照片",
+        "回填 Drive 連結到測試與照片表",
+        "確認圖片能開啟"
+      ],
+      "completion_standard": "照片可追溯到方案、日期與拍攝階段",
+      "required_uploads": [
+        "Drive 連結"
+      ],
+      "exception_rule": "缺圖或連結錯誤視為未完成。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    },
+    {
+      "id": "84d32bf2-4655-4baf-a5b6-e0f974bea1d7",
+      "code": "SOP-06",
+      "category": "日結",
+      "title": "收班回報",
+      "version": "v1.0",
+      "status": "draft",
+      "trigger_condition": "每日下班前",
+      "steps": [
+        "檢查今日表單與照片完整性",
+        "回報正式可採用參數",
+        "回報明日需補料與待決策事項"
+      ],
+      "completion_standard": "老闆可直接看懂今日狀態與明日需求",
+      "required_uploads": [
+        "日結摘要"
+      ],
+      "exception_rule": "未完成日結不得視為當日交班完成。",
+      "updated_at": "2026-04-14T08:13:41.296381+08:00"
+    }
+  ],
+  "issues": [
+    {
+      "reported_at": "2026-04-14T11:00:00+08:00",
+      "category": "烤箱",
+      "title": "上色不均",
+      "description": "右後方顏色偏深",
+      "action_taken": "暫停該批並拍照",
+      "severity": "medium",
+      "blocks_service": false,
+      "needs_owner_decision": true,
+      "reported_by": "測試員工",
+      "status": "new",
+      "id": "e8272140-7a62-4ea0-830c-f49c38db72cb",
+      "created_at": "2026-04-14T08:13:41.548537+08:00"
+    },
+    {
+      "reported_at": "2026-04-14T11:00:00+08:00",
+      "category": "烤箱",
+      "title": "上色不均",
+      "description": "右後方顏色偏深",
+      "action_taken": "暫停該批並拍照",
+      "severity": "medium",
+      "blocks_service": false,
+      "needs_owner_decision": true,
+      "reported_by": "測試員工",
+      "status": "new",
+      "id": "cc14075e-6b35-4397-a496-ea34d780a1d4",
+      "created_at": "2026-04-14T08:14:42.777454+08:00"
+    },
+    {
+      "reported_at": "2026-04-14T11:00:00+08:00",
+      "category": "烤箱",
+      "title": "上色不均",
+      "description": "右後方顏色偏深",
+      "action_taken": "暫停該批並拍照",
+      "severity": "medium",
+      "blocks_service": false,
+      "needs_owner_decision": true,
+      "reported_by": "測試員工",
+      "status": "new",
+      "id": "aea0232d-8f3e-4cf6-86aa-be98413255f0",
+      "created_at": "2026-04-14T08:38:42.832565+08:00"
+    }
+  ]
+}
